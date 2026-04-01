@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DP — Painel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg2: #111113;
+    --bg3: #18181b;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --muted: #6b6a6e;
+    --accent: #89c4f4;
+    --accent2: #5aaee8;
+    --danger: #ff4f4f;
+    --warning: #f0a050;
+    --success: #50d490;
+    --info: #50b4f0;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-display); min-height:100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 30% 50%, rgba(137,196,244,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(80,180,240,0.04) 0%, transparent 50%),
+                var(--bg);
+  }
+  .login-box {
+    width:380px; padding:48px 40px;
+    background:var(--bg2); border:1px solid var(--border2);
+    border-radius:16px;
+  }
+  .login-logo { font-size:28px; font-weight:800; letter-spacing:-1px; margin-bottom:8px; }
+  .login-logo span { color:var(--accent); }
+  .login-sub { font-size:13px; color:var(--muted); margin-bottom:36px; font-family:var(--font-mono); }
+  .login-box label { display:block; font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+  .login-box input {
+    width:100%; padding:12px 14px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:8px; color:var(--text); font-family:var(--font-mono); font-size:14px;
+    margin-bottom:20px; outline:none; transition:border .2s;
+  }
+  .login-box input:focus { border-color:var(--accent); }
+  .btn-primary {
+    width:100%; padding:13px; background:var(--accent); color:#0d2a42;
+    border:none; border-radius:8px; font-family:var(--font-display); font-size:14px;
+    font-weight:700; cursor:pointer; letter-spacing:.02em; transition:background .2s, transform .1s;
+  }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-primary:active { transform:scale(.98); }
+  .login-error { font-size:12px; color:var(--danger); margin-top:12px; text-align:center; font-family:var(--font-mono); }
+
+  /* LAYOUT */
+  #app { display:none; min-height:100vh; }
+  .sidebar {
+    position:fixed; top:0; left:0; width:220px; height:100vh;
+    background:var(--bg2); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; z-index:100;
+  }
+  .sidebar-logo {
+    padding:28px 24px 20px; font-size:20px; font-weight:800;
+    letter-spacing:-0.5px; border-bottom:1px solid var(--border);
+  }
+  .sidebar-logo span { color:var(--accent); }
+  .sidebar-tag { font-family:var(--font-mono); font-size:10px; color:var(--muted); display:block; margin-top:2px; }
+  nav { padding:16px 12px; flex:1; }
+  .nav-section { font-size:10px; font-weight:600; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; padding:12px 12px 6px; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;
+    color:var(--muted); transition:all .15s; margin-bottom:2px;
+  }
+  .nav-item:hover { background:var(--bg3); color:var(--text); }
+  .nav-item.active { background:rgba(137,196,244,0.1); color:var(--accent); }
+  .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .sidebar-bottom { padding:16px; border-top:1px solid var(--border); }
+  .user-badge {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:var(--bg3); border-radius:8px;
+  }
+  .user-avatar {
+    width:30px; height:30px; border-radius:50%; background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; color:#0d2a42;
+  }
+  .user-info { flex:1; overflow:hidden; }
+  .user-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .user-role { font-size:10px; color:var(--muted); font-family:var(--font-mono); }
+  .btn-logout { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:4px; }
+  .btn-logout:hover { color:var(--danger); }
+
+  /* MAIN */
+  .main { margin-left:220px; padding:32px 36px; min-height:100vh; }
+  .page { display:none; }
+  .page.active { display:block; }
+  .page-header { margin-bottom:28px; }
+  .page-title { font-size:26px; font-weight:800; letter-spacing:-0.5px; }
+  .page-sub { font-size:13px; color:var(--muted); margin-top:4px; font-family:var(--font-mono); }
+
+  /* CARDS */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stat-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px;
+  }
+  .stat-label { font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+  .stat-value { font-size:28px; font-weight:800; letter-spacing:-1px; }
+  .stat-value.accent { color:var(--accent); }
+  .stat-value.success { color:var(--success); }
+  .stat-value.warning { color:var(--warning); }
+  .stat-value.danger { color:var(--danger); }
+  .stat-sub { font-size:11px; color:var(--muted); margin-top:4px; font-family:var(--font-mono); }
+
+  /* TABLE */
+  .table-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+  }
+  .table-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 22px; border-bottom:1px solid var(--border);
+  }
+  .table-title { font-size:15px; font-weight:700; }
+  .btn-add {
+    padding:8px 16px; background:var(--accent); color:#0d2a42;
+    border:none; border-radius:7px; font-family:var(--font-display);
+    font-size:13px; font-weight:700; cursor:pointer; transition:background .2s;
+  }
+  .btn-add:hover { background:var(--accent2); }
+  .search-input {
+    padding:8px 14px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:7px; color:var(--text); font-family:var(--font-mono); font-size:13px;
+    outline:none; width:220px;
+  }
+  .search-input:focus { border-color:var(--accent); }
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    padding:12px 16px; text-align:left; font-size:11px; font-weight:600;
+    letter-spacing:.08em; color:var(--muted); text-transform:uppercase;
+    border-bottom:1px solid var(--border); background:var(--bg2);
+  }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:var(--bg3); }
+  tbody td { padding:13px 16px; font-size:13px; font-family:var(--font-mono); }
+  .td-name { font-family:var(--font-display); font-size:13px; font-weight:600; }
+
+  /* BADGES */
+  .badge {
+    display:inline-block; padding:3px 9px; border-radius:20px;
+    font-size:11px; font-weight:600; letter-spacing:.04em;
+  }
+  .badge-quente { background:rgba(255,79,79,.15); color:#ff7070; }
+  .badge-morno { background:rgba(240,160,80,.15); color:var(--warning); }
+  .badge-frio { background:rgba(80,180,240,.15); color:var(--info); }
+  .badge-ativo { background:rgba(80,212,144,.15); color:var(--success); }
+  .badge-venda { background:rgba(137,196,244,.15); color:var(--accent); }
+  .badge-perdido { background:rgba(255,79,79,.1); color:var(--danger); }
+  .badge-pendente { background:rgba(240,160,80,.15); color:var(--warning); }
+  .badge-pago { background:rgba(80,212,144,.15); color:var(--success); }
+  .badge-atrasado { background:rgba(255,79,79,.15); color:var(--danger); }
+  .badge-aberta { background:rgba(80,212,144,.15); color:var(--success); }
+  .badge-encerrada { background:rgba(255,79,79,.1); color:var(--danger); }
+  .badge-analisado { background:rgba(80,180,240,.15); color:var(--info); }
+  .badge-aprovado { background:rgba(80,212,144,.15); color:var(--success); }
+  .badge-reprovado { background:rgba(255,79,79,.15); color:var(--danger); }
+  .badge-realizada { background:rgba(80,212,144,.15); color:var(--success); }
+  .badge-agendada { background:rgba(80,180,240,.15); color:var(--info); }
+  .badge-cancelada { background:rgba(255,79,79,.1); color:var(--danger); }
+
+  .btn-action {
+    padding:5px 10px; border-radius:5px; font-size:11px; font-weight:600;
+    cursor:pointer; border:1px solid var(--border2); background:var(--bg3);
+    color:var(--muted); transition:all .15s; font-family:var(--font-display);
+  }
+  .btn-action:hover { color:var(--text); border-color:var(--accent); }
+  .btn-danger { border-color:rgba(255,79,79,.3) !important; }
+  .btn-danger:hover { color:var(--danger) !important; border-color:var(--danger) !important; }
+
+  /* MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.7);
+    display:none; align-items:center; justify-content:center; z-index:1000;
+    backdrop-filter:blur(4px);
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--bg2); border:1px solid var(--border2); border-radius:16px;
+    padding:32px; width:520px; max-height:85vh; overflow-y:auto;
+    animation:slideUp .2s ease;
+  }
+  @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  .modal-title { font-size:18px; font-weight:800; margin-bottom:24px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width:100%; padding:11px 14px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:8px; color:var(--text); font-family:var(--font-mono); font-size:13px;
+    outline:none; transition:border .2s;
+  }
+  .form-group select option { background:var(--bg3); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--accent); }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .modal-footer { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
+  .btn-cancel {
+    padding:10px 20px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:8px; color:var(--muted); font-family:var(--font-display);
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .btn-cancel:hover { color:var(--text); }
+  .btn-save {
+    padding:10px 24px; background:var(--accent); color:#0d2a42;
+    border:none; border-radius:8px; font-family:var(--font-display);
+    font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .btn-save:hover { background:var(--accent2); }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:28px; right:28px; padding:14px 20px;
+    background:var(--bg3); border:1px solid var(--border2); border-radius:10px;
+    font-size:13px; font-family:var(--font-mono); z-index:2000;
+    transform:translateY(80px); opacity:0; transition:all .3s;
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success { border-color:var(--success); color:var(--success); }
+  .toast.error { border-color:var(--danger); color:var(--danger); }
+
+  .loading { text-align:center; padding:48px; color:var(--muted); font-family:var(--font-mono); font-size:13px; }
+  .empty { text-align:center; padding:48px; color:var(--muted); font-family:var(--font-mono); font-size:13px; }
+
+  .chip-empresa {
+    display:inline-block; padding:2px 8px; background:rgba(137,196,244,.08);
+    border:1px solid rgba(137,196,244,.2); border-radius:4px;
+    font-size:11px; color:var(--accent); font-family:var(--font-mono);
+  }
+
+  @media(max-width:900px) {
+    .sidebar { width:60px; }
+    .sidebar-logo, .nav-section, .nav-item span, .sidebar-tag, .user-info, .sidebar-bottom .user-badge { display:none; }
+    .main { margin-left:60px; padding:20px; }
+    .stats-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Digital<span>.</span>Pressure</div>
+    <div class="login-sub">// painel administrativo interno</div>
+    <label>E-mail</label>
+    <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"/>
+    <label>Senha</label>
+    <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn-primary" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      DP<span>.</span>crm
+      <span class="sidebar-tag">// admin</span>
+    </div>
+    <nav>
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">◈</span><span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('leads')">
+        <span class="nav-icon">◎</span><span>Leads / CRM</span>
+      </div>
+      <div class="nav-section">Módulos</div>
+      <div class="nav-item" onclick="showPage('financeiro')">
+        <span class="nav-icon">◐</span><span>Financeiro</span>
+      </div>
+      <div class="nav-item" onclick="showPage('reunioes')">
+        <span class="nav-icon">◷</span><span>Reuniões</span>
+      </div>
+      <div class="nav-section">RH</div>
+      <div class="nav-item" onclick="showPage('vagas')">
+        <span class="nav-icon">◑</span><span>Vagas</span>
+      </div>
+      <div class="nav-section">Config</div>
+      <div class="nav-item" onclick="showPage('empresas')">
+        <span class="nav-icon">◻</span><span>Empresas</span>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">DP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Admin</div>
+          <div class="user-role">administrador</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()" title="Sair">⏻</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">// visão geral do sistema</div>
+      </div>
+      <div class="stats-grid" id="dash-stats">
+        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-value accent" id="stat-leads">—</div></div>
+        <div class="stat-card"><div class="stat-label">Vendas fechadas</div><div class="stat-value success" id="stat-vendas">—</div></div>
+        <div class="stat-card"><div class="stat-label">Receita potencial</div><div class="stat-value warning" id="stat-receita">—</div></div>
+        <div class="stat-card"><div class="stat-label">Empresas ativas</div><div class="stat-value" id="stat-empresas">—</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">Leads recentes</div></div>
+        <table>
+          <thead><tr><th>Nome</th><th>Produto</th><th>Etapa</th><th>Status</th><th>Temp.</th><th>Receita</th></tr></thead>
+          <tbody id="dash-leads-tbody"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div class="page" id="page-leads">
+      <div class="page-header">
+        <div class="page-title">Leads / CRM</div>
+        <div class="page-sub">// pipeline comercial</div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Todos os leads</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input class="search-input" placeholder="Buscar lead..." id="search-leads" oninput="filterLeads()"/>
+            <button class="btn-add" onclick="openLeadModal()">+ Novo lead</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>Origem</th><th>Vendedor</th><th>Produto</th><th>Etapa</th><th>Status</th><th>Temp.</th><th>Receita</th><th>Conexão</th><th></th></tr></thead>
+          <tbody id="leads-tbody"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div class="page" id="page-financeiro">
+      <div class="page-header">
+        <div class="page-title">Financeiro</div>
+        <div class="page-sub">// entradas e saídas por empresa</div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Lançamentos</div>
+          <button class="btn-add" onclick="openFinanceiroModal()">+ Novo lançamento</button>
+        </div>
+        <table>
+          <thead><tr><th>Empresa</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Status</th><th>Vencimento</th><th></th></tr></thead>
+          <tbody id="fin-tbody"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REUNIÕES -->
+    <div class="page" id="page-reunioes">
+      <div class="page-header">
+        <div class="page-title">Reuniões & Entregas</div>
+        <div class="page-sub">// visível para o cliente em tempo real</div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Agenda de reuniões</div>
+          <button class="btn-add" onclick="openReuniaoModal()">+ Nova reunião</button>
+        </div>
+        <table>
+          <thead><tr><th>Empresa</th><th>Título</th><th>Data</th><th>Status</th><th>Entregáveis</th><th></th></tr></thead>
+          <tbody id="reu-tbody"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VAGAS -->
+    <div class="page" id="page-vagas">
+      <div class="page-header">
+        <div class="page-title">Vagas de RH</div>
+        <div class="page-sub">// gestão de vagas por empresa</div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Vagas abertas</div>
+          <button class="btn-add" onclick="openVagaModal()">+ Nova vaga</button>
+        </div>
+        <table>
+          <thead><tr><th>Empresa</th><th>Título</th><th>Status</th><th>Criada em</th><th></th></tr></thead>
+          <tbody id="vag-tbody"><tr><td colspan="5" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EMPRESAS -->
+    <div class="page" id="page-empresas">
+      <div class="page-header">
+        <div class="page-title">Empresas clientes</div>
+        <div class="page-sub">// cadastro e gestão</div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Clientes cadastrados</div>
+          <button class="btn-add" onclick="openEmpresaModal()">+ Nova empresa</button>
+        </div>
+        <table>
+          <thead><tr><th>Nome</th><th>E-mail admin</th><th>Plano</th><th>Status</th><th>Cadastro</th><th></th></tr></thead>
+          <tbody id="emp-tbody"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAIS -->
+<!-- Lead -->
+<div class="modal-overlay" id="modal-lead">
+  <div class="modal">
+    <div class="modal-title" id="lead-modal-title">Novo Lead</div>
+    <input type="hidden" id="lead-id"/>
+    <div class="form-row">
+      <div class="form-group"><label>Nome</label><input id="l-nome" placeholder="Nome completo"/></div>
+      <div class="form-group"><label>Telefone</label><input id="l-tel" placeholder="11999999999"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Origem</label>
+        <select id="l-origem"><option>Ligação</option><option>Indicação</option><option>Evento</option><option>MLS</option><option>Outro</option></select>
+      </div>
+      <div class="form-group"><label>Vendedor</label><input id="l-vendedor" placeholder="Nome do vendedor"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Produto</label>
+        <select id="l-produto"><option>Escudo 21</option><option>Aceleração 6 meses</option><option>Outro</option></select>
+      </div>
+      <div class="form-group"><label>Etapa</label>
+        <select id="l-etapa"><option>Conexão</option><option>Referido</option><option>Apresentação</option><option>Proposta</option><option>Fechamento</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Status</label>
+        <select id="l-status"><option>ativo</option><option>perdido</option><option>venda</option></select>
+      </div>
+      <div class="form-group"><label>Temperatura</label>
+        <select id="l-temp"><option>quente</option><option>morno</option><option>frio</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Receita (R$)</label><input id="l-receita" type="number" placeholder="0"/></div>
+      <div class="form-group"><label>Data conexão</label><input id="l-conexao" type="date"/></div>
+    </div>
+    <div class="form-group"><label>Observações</label><textarea id="l-obs" placeholder="Notas sobre o lead..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-lead')">Cancelar</button>
+      <button class="btn-save" onclick="saveLead()">Salvar lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Financeiro -->
+<div class="modal-overlay" id="modal-financeiro">
+  <div class="modal">
+    <div class="modal-title">Novo Lançamento</div>
+    <input type="hidden" id="fin-id"/>
+    <div class="form-group"><label>Empresa</label><select id="fin-empresa"></select></div>
+    <div class="form-group"><label>Descrição</label><input id="fin-desc" placeholder="Ex: Mensalidade Escudo 21"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>Tipo</label>
+        <select id="fin-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select>
+      </div>
+      <div class="form-group"><label>Valor (R$)</label><input id="fin-valor" type="number" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Status</label>
+        <select id="fin-status"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select>
+      </div>
+      <div class="form-group"><label>Vencimento</label><input id="fin-venc" type="date"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-financeiro')">Cancelar</button>
+      <button class="btn-save" onclick="saveFinanceiro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reunião -->
+<div class="modal-overlay" id="modal-reuniao">
+  <div class="modal">
+    <div class="modal-title">Nova Reunião / Entrega</div>
+    <input type="hidden" id="reu-id"/>
+    <div class="form-group"><label>Empresa</label><select id="reu-empresa"></select></div>
+    <div class="form-group"><label>Título</label><input id="reu-titulo" placeholder="Ex: Reunião de alinhamento mensal"/></div>
+    <div class="form-row">
+      <div class="form-group"><label>Data</label><input id="reu-data" type="datetime-local"/></div>
+      <div class="form-group"><label>Status</label>
+        <select id="reu-status"><option value="agendada">Agendada</option><option value="realizada">Realizada</option><option value="cancelada">Cancelada</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Entregáveis</label><textarea id="reu-entregaveis" placeholder="Descreva o que foi entregue..."></textarea></div>
+    <div class="form-group"><label>Link da gravação</label><input id="reu-link" placeholder="https://..."/></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-reuniao')">Cancelar</button>
+      <button class="btn-save" onclick="saveReuniao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vaga -->
+<div class="modal-overlay" id="modal-vaga">
+  <div class="modal">
+    <div class="modal-title">Nova Vaga</div>
+    <input type="hidden" id="vag-id"/>
+    <div class="form-group"><label>Empresa</label><select id="vag-empresa"></select></div>
+    <div class="form-group"><label>Título da vaga</label><input id="vag-titulo" placeholder="Ex: Analista de Marketing"/></div>
+    <div class="form-group"><label>Descrição</label><textarea id="vag-desc" placeholder="Descreva a vaga..."></textarea></div>
+    <div class="form-group"><label>Requisitos</label><textarea id="vag-req" placeholder="Liste os requisitos..."></textarea></div>
+    <div class="form-group"><label>Status</label>
+      <select id="vag-status"><option value="aberta">Aberta</option><option value="pausada">Pausada</option><option value="encerrada">Encerrada</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-vaga')">Cancelar</button>
+      <button class="btn-save" onclick="saveVaga()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Empresa -->
+<div class="modal-overlay" id="modal-empresa">
+  <div class="modal">
+    <div class="modal-title">Nova Empresa</div>
+    <input type="hidden" id="emp-id"/>
+    <div class="form-row">
+      <div class="form-group"><label>Nome</label><input id="emp-nome" placeholder="Nome da empresa"/></div>
+      <div class="form-group"><label>CNPJ</label><input id="emp-cnpj" placeholder="00.000.000/0001-00"/></div>
+    </div>
+    <div class="form-group"><label>E-mail do admin</label><input id="emp-email" type="email" placeholder="admin@empresa.com"/></div>
+    <div class="form-group"><label>Plano</label>
+      <select id="emp-plano"><option value="escudo_21">Escudo 21</option><option value="aceleracao_6">Aceleração 6 meses</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-empresa')">Cancelar</button>
+      <button class="btn-save" onclick="saveEmpresa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://chxlseszedcnmqqryusz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let allLeads = [];
+let empresas = [];
+
+// ── AUTH ──────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  document.getElementById('login-error').textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { document.getElementById('login-error').textContent = 'E-mail ou senha inválidos.'; return; }
+  currentUser = data.user;
+  initApp();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) { currentUser = data.session.user; initApp(); }
+}
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const email = currentUser.email || '';
+  const initials = email.slice(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name').textContent = email.split('@')[0];
+  loadAll();
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'leads') loadLeads();
+  if (name === 'financeiro') loadFinanceiro();
+  if (name === 'reunioes') loadReunioes();
+  if (name === 'vagas') loadVagas();
+  if (name === 'empresas') loadEmpresas();
+}
+
+// ── LOAD ALL ──────────────────────────────────────────
+async function loadAll() {
+  await loadEmpresasCache();
+  loadDashboard();
+}
+
+async function loadEmpresasCache() {
+  const { data } = await sb.from('empresas').select('*').order('nome');
+  empresas = data || [];
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+async function loadDashboard() {
+  const { data: leads } = await sb.from('leads').select('*').order('criado_em', { ascending: false });
+  allLeads = leads || [];
+  const vendas = allLeads.filter(l => l.status === 'venda');
+  const receita = allLeads.reduce((s, l) => s + (l.receita || 0), 0);
+  document.getElementById('stat-leads').textContent = allLeads.length;
+  document.getElementById('stat-vendas').textContent = vendas.length;
+  document.getElementById('stat-receita').textContent = 'R$ ' + receita.toLocaleString('pt-BR');
+  document.getElementById('stat-empresas').textContent = empresas.length;
+  const tbody = document.getElementById('dash-leads-tbody');
+  const recent = allLeads.slice(0, 8);
+  tbody.innerHTML = recent.length ? recent.map(l => `
+    <tr>
+      <td class="td-name">${l.nome}</td>
+      <td>${l.produto || '—'}</td>
+      <td>${l.etapa || '—'}</td>
+      <td><span class="badge badge-${l.status}">${l.status}</span></td>
+      <td><span class="badge badge-${l.temperatura}">${l.temperatura}</span></td>
+      <td style="color:var(--accent)">R$ ${(l.receita||0).toLocaleString('pt-BR')}</td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty">Sem leads ainda</td></tr>';
+}
+
+// ── LEADS ─────────────────────────────────────────────
+async function loadLeads() {
+  const { data } = await sb.from('leads').select('*').order('criado_em', { ascending: false });
+  allLeads = data || [];
+  renderLeads(allLeads);
+}
+
+function renderLeads(leads) {
+  const tbody = document.getElementById('leads-tbody');
+  tbody.innerHTML = leads.length ? leads.map(l => `
+    <tr>
+      <td class="td-name">${l.nome}</td>
+      <td>${l.origem || '—'}</td>
+      <td>${l.vendedor || '—'}</td>
+      <td>${l.produto || '—'}</td>
+      <td>${l.etapa || '—'}</td>
+      <td><span class="badge badge-${l.status}">${l.status}</span></td>
+      <td><span class="badge badge-${l.temperatura}">${l.temperatura}</span></td>
+      <td style="color:var(--accent)">R$ ${(l.receita||0).toLocaleString('pt-BR')}</td>
+      <td style="font-family:var(--font-mono);font-size:11px">${l.conexao || '—'}</td>
+      <td>
+        <button class="btn-action" onclick="editLead(${l.id})">editar</button>
+        <button class="btn-action btn-danger" onclick="deleteLead(${l.id})" style="margin-left:4px">×</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="10" class="empty">Nenhum lead encontrado</td></tr>';
+}
+
+function filterLeads() {
+  const q = document.getElementById('search-leads').value.toLowerCase();
+  renderLeads(allLeads.filter(l => l.nome.toLowerCase().includes(q) || (l.vendedor||'').toLowerCase().includes(q) || (l.produto||'').toLowerCase().includes(q)));
+}
+
+function openLeadModal(lead = null) {
+  document.getElementById('lead-modal-title').textContent = lead ? 'Editar Lead' : 'Novo Lead';
+  document.getElementById('lead-id').value = lead ? lead.id : '';
+  document.getElementById('l-nome').value = lead?.nome || '';
+  document.getElementById('l-tel').value = lead?.telefone || '';
+  document.getElementById('l-origem').value = lead?.origem || 'Ligação';
+  document.getElementById('l-vendedor').value = lead?.vendedor || '';
+  document.getElementById('l-produto').value = lead?.produto || 'Escudo 21';
+  document.getElementById('l-etapa').value = lead?.etapa || 'Conexão';
+  document.getElementById('l-status').value = lead?.status || 'ativo';
+  document.getElementById('l-temp').value = lead?.temperatura || 'morno';
+  document.getElementById('l-receita').value = lead?.receita || 0;
+  document.getElementById('l-conexao').value = lead?.conexao || '';
+  document.getElementById('l-obs').value = lead?.observacoes || '';
+  document.getElementById('modal-lead').classList.add('open');
+}
+
+async function editLead(id) {
+  const lead = allLeads.find(l => l.id === id);
+  if (lead) openLeadModal(lead);
+}
+
+async function saveLead() {
+  const id = document.getElementById('lead-id').value;
+  const emp = empresas[0];
+  const payload = {
+    empresa_id: emp?.id || '00000000-0000-0000-0000-000000000001',
+    nome: document.getElementById('l-nome').value,
+    telefone: document.getElementById('l-tel').value || null,
+    origem: document.getElementById('l-origem').value,
+    vendedor: document.getElementById('l-vendedor').value,
+    produto: document.getElementById('l-produto').value,
+    etapa: document.getElementById('l-etapa').value,
+    status: document.getElementById('l-status').value,
+    temperatura: document.getElementById('l-temp').value,
+    receita: parseFloat(document.getElementById('l-receita').value) || 0,
+    conexao: document.getElementById('l-conexao').value || null,
+    observacoes: document.getElementById('l-obs').value || null,
+    atualizado_em: new Date().toISOString()
+  };
+  let error;
+  if (id) {
+    ({ error } = await sb.from('leads').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('leads').insert(payload));
+  }
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
+  closeModal('modal-lead');
+  showToast('Lead salvo com sucesso!', 'success');
+  loadLeads(); loadDashboard();
+}
+
+async function deleteLead(id) {
+  if (!confirm('Remover este lead?')) return;
+  await sb.from('leads').delete().eq('id', id);
+  showToast('Lead removido', 'success');
+  loadLeads(); loadDashboard();
+}
+
+// ── FINANCEIRO ────────────────────────────────────────
+async function loadFinanceiro() {
+  const { data } = await sb.from('financeiro').select('*, empresas(nome)').order('criado_em', { ascending: false });
+  const tbody = document.getElementById('fin-tbody');
+  tbody.innerHTML = (data||[]).length ? data.map(f => `
+    <tr>
+      <td><span class="chip-empresa">${f.empresas?.nome || '—'}</span></td>
+      <td class="td-name">${f.descricao}</td>
+      <td><span class="badge badge-${f.tipo === 'entrada' ? 'ativo' : 'perdido'}">${f.tipo}</span></td>
+      <td style="color:${f.tipo==='entrada'?'var(--success)':'var(--danger)'}; font-family:var(--font-mono)">R$ ${(f.valor||0).toLocaleString('pt-BR')}</td>
+      <td><span class="badge badge-${f.status}">${f.status}</span></td>
+      <td style="font-family:var(--font-mono);font-size:11px">${f.vencimento || '—'}</td>
+      <td><button class="btn-action btn-danger" onclick="deleteRow('financeiro','${f.id}',loadFinanceiro)">×</button></td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">Nenhum lançamento ainda</td></tr>';
+}
+
+function openFinanceiroModal() {
+  populateEmpresaSelect('fin-empresa');
+  document.getElementById('fin-id').value = '';
+  document.getElementById('fin-desc').value = '';
+  document.getElementById('fin-valor').value = '';
+  document.getElementById('modal-financeiro').classList.add('open');
+}
+
+async function saveFinanceiro() {
+  const payload = {
+    empresa_id: document.getElementById('fin-empresa').value,
+    descricao: document.getElementById('fin-desc').value,
+    tipo: document.getElementById('fin-tipo').value,
+    valor: parseFloat(document.getElementById('fin-valor').value) || 0,
+    status: document.getElementById('fin-status').value,
+    vencimento: document.getElementById('fin-venc').value || null
+  };
+  const { error } = await sb.from('financeiro').insert(payload);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  closeModal('modal-financeiro');
+  showToast('Lançamento salvo!', 'success');
+  loadFinanceiro();
+}
+
+// ── REUNIÕES ──────────────────────────────────────────
+async function loadReunioes() {
+  const { data } = await sb.from('reunioes').select('*, empresas(nome)').order('data_reuniao', { ascending: false });
+  const tbody = document.getElementById('reu-tbody');
+  tbody.innerHTML = (data||[]).length ? data.map(r => `
+    <tr>
+      <td><span class="chip-empresa">${r.empresas?.nome || '—'}</span></td>
+      <td class="td-name">${r.titulo}</td>
+      <td style="font-family:var(--font-mono);font-size:11px">${r.data_reuniao ? new Date(r.data_reuniao).toLocaleString('pt-BR') : '—'}</td>
+      <td><span class="badge badge-${r.status}">${r.status}</span></td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.entregaveis || '—'}</td>
+      <td><button class="btn-action btn-danger" onclick="deleteRow('reunioes','${r.id}',loadReunioes)">×</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty">Nenhuma reunião ainda</td></tr>';
+}
+
+function openReuniaoModal() {
+  populateEmpresaSelect('reu-empresa');
+  document.getElementById('reu-id').value = '';
+  document.getElementById('reu-titulo').value = '';
+  document.getElementById('reu-entregaveis').value = '';
+  document.getElementById('reu-link').value = '';
+  document.getElementById('modal-reuniao').classList.add('open');
+}
+
+async function saveReuniao() {
+  const payload = {
+    empresa_id: document.getElementById('reu-empresa').value,
+    titulo: document.getElementById('reu-titulo').value,
+    data_reuniao: document.getElementById('reu-data').value || null,
+    status: document.getElementById('reu-status').value,
+    entregaveis: document.getElementById('reu-entregaveis').value || null,
+    link_gravacao: document.getElementById('reu-link').value || null
+  };
+  const { error } = await sb.from('reunioes').insert(payload);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  closeModal('modal-reuniao');
+  showToast('Reunião salva!', 'success');
+  loadReunioes();
+}
+
+// ── VAGAS ─────────────────────────────────────────────
+async function loadVagas() {
+  const { data } = await sb.from('vagas').select('*, empresas(nome)').order('criado_em', { ascending: false });
+  const tbody = document.getElementById('vag-tbody');
+  tbody.innerHTML = (data||[]).length ? data.map(v => `
+    <tr>
+      <td><span class="chip-empresa">${v.empresas?.nome || '—'}</span></td>
+      <td class="td-name">${v.titulo}</td>
+      <td><span class="badge badge-${v.status}">${v.status}</span></td>
+      <td style="font-family:var(--font-mono);font-size:11px">${new Date(v.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><button class="btn-action btn-danger" onclick="deleteRow('vagas','${v.id}',loadVagas)">×</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" class="empty">Nenhuma vaga ainda</td></tr>';
+}
+
+function openVagaModal() {
+  populateEmpresaSelect('vag-empresa');
+  document.getElementById('vag-id').value = '';
+  document.getElementById('vag-titulo').value = '';
+  document.getElementById('vag-desc').value = '';
+  document.getElementById('vag-req').value = '';
+  document.getElementById('modal-vaga').classList.add('open');
+}
+
+async function saveVaga() {
+  const payload = {
+    empresa_id: document.getElementById('vag-empresa').value,
+    titulo: document.getElementById('vag-titulo').value,
+    descricao: document.getElementById('vag-desc').value || null,
+    requisitos: document.getElementById('vag-req').value || null,
+    status: document.getElementById('vag-status').value
+  };
+  const { error } = await sb.from('vagas').insert(payload);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  closeModal('modal-vaga');
+  showToast('Vaga salva!', 'success');
+  loadVagas();
+}
+
+// ── EMPRESAS ──────────────────────────────────────────
+async function loadEmpresas() {
+  const { data } = await sb.from('empresas').select('*').order('nome');
+  empresas = data || [];
+  const tbody = document.getElementById('emp-tbody');
+  tbody.innerHTML = empresas.length ? empresas.map(e => `
+    <tr>
+      <td class="td-name">${e.nome}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${e.email_admin}</td>
+      <td><span class="badge badge-${e.ativo ? 'ativo' : 'perdido'}">${e.plano?.replace('_',' ')}</span></td>
+      <td><span class="badge badge-${e.ativo ? 'ativo' : 'perdido'}">${e.ativo ? 'ativo' : 'inativo'}</span></td>
+      <td style="font-family:var(--font-mono);font-size:11px">${new Date(e.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><button class="btn-action btn-danger" onclick="deleteRow('empresas','${e.id}',loadEmpresas)">×</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty">Nenhuma empresa ainda</td></tr>';
+}
+
+function openEmpresaModal() {
+  document.getElementById('emp-id').value = '';
+  document.getElementById('emp-nome').value = '';
+  document.getElementById('emp-cnpj').value = '';
+  document.getElementById('emp-email').value = '';
+  document.getElementById('modal-empresa').classList.add('open');
+}
+
+async function saveEmpresa() {
+  const payload = {
+    nome: document.getElementById('emp-nome').value,
+    cnpj: document.getElementById('emp-cnpj').value || null,
+    email_admin: document.getElementById('emp-email').value,
+    plano: document.getElementById('emp-plano').value
+  };
+  const { error } = await sb.from('empresas').insert(payload);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  closeModal('modal-empresa');
+  showToast('Empresa cadastrada!', 'success');
+  loadEmpresas(); loadEmpresasCache();
+}
+
+// ── UTILS ─────────────────────────────────────────────
+async function deleteRow(table, id, reloadFn) {
+  if (!confirm('Confirmar exclusão?')) return;
+  await sb.from(table).delete().eq('id', id);
+  showToast('Removido!', 'success');
+  reloadFn();
+}
+
+function populateEmpresaSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = empresas.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── INIT ──────────────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>
