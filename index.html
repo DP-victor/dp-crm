@@ -1283,9 +1283,8 @@ async function renderEmpresasAdmin() {
 
 async function enviarConviteAdmin(email, nome) {
   const senha = prompt(`Defina uma senha para ${email}:\n(mínimo 8 caracteres)`);
-  if (!senha || senha.length < 8) { alert('Senha inválida. Mínimo 8 caracteres.'); return; }
-  if (!confirm(`Enviar acesso para ${email}?\n\nSenha: ${senha}\n\nO cliente receberá um e-mail com login e senha.`)) return;
-  showToast('Enviando...');
+  if (!senha || senha.length < 8) { alert('Senha deve ter mínimo 8 caracteres.'); return; }
+  showToast('Criando acesso...');
   try {
     const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
@@ -1294,39 +1293,38 @@ async function enviarConviteAdmin(email, nome) {
     });
     const result = await res.json();
     if (result.error) throw new Error(result.error);
-    showToast(`✓ Acesso enviado para ${email}!`);
+    abrirEmailCredenciais(email, nome, senha);
+    showToast(`✓ Acesso criado! Abra o e-mail e envie para ${email}.`);
   } catch(err) {
     showToast('Erro: ' + err.message);
   }
 }
 
 async function aprovarSolicitacao(id, nomeEmpresa, email) {
-  const senha = prompt(`Aprovando: ${nomeEmpresa}\n\nDefina uma senha de acesso para ${email}:\n(mínimo 8 caracteres)`);
-  if (!senha || senha.length < 8) { alert('Senha inválida. Mínimo 8 caracteres.'); return; }
-  if (!confirm(`Confirmar aprovação?\n\nEmpresa: ${nomeEmpresa}\nE-mail: ${email}\nSenha: ${senha}\n\nO cliente receberá um e-mail com os dados de acesso.`)) return;
+  const senha = prompt(`Aprovando: ${nomeEmpresa}\n\nDefina a senha de acesso para ${email}:\n(mínimo 8 caracteres)`);
+  if (!senha || senha.length < 8) { alert('Senha deve ter mínimo 8 caracteres.'); return; }
+  if (!confirm(`Confirmar aprovação de ${nomeEmpresa}?`)) return;
 
   // 1. Criar empresa no banco
   const { data: emp, error: empErr } = await sb.from('empresas').insert({
     nome: nomeEmpresa, email_admin: email, plano: 'escudo_21'
   }).select().single();
-
   if (empErr && !empErr.message.includes('duplicate')) {
     showToast('Erro ao criar empresa: ' + empErr.message); return;
   }
 
   // 2. Criar usuário vinculado à empresa
-  const empresaId = emp?.id;
-  if (empresaId) {
+  if (emp?.id) {
     await sb.from('usuarios').insert({
-      empresa_id: empresaId, nome: nomeEmpresa, email: email, perfil: 'admin'
-    }).select().single();
+      empresa_id: emp.id, nome: nomeEmpresa, email, perfil: 'admin'
+    });
   }
 
-  // 3. Marcar solicitação como aprovada
+  // 3. Marcar como aprovado
   await sb.from('solicitacoes').update({ status: 'aprovado' }).eq('id', id);
 
-  // 4. Enviar credenciais via Edge Function
-  showToast('Aprovando e enviando acesso...');
+  // 4. Criar conta via Edge Function
+  showToast('Criando conta...');
   try {
     const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
@@ -1335,12 +1333,35 @@ async function aprovarSolicitacao(id, nomeEmpresa, email) {
     });
     const result = await res.json();
     if (result.error) throw new Error(result.error);
-    showToast(`✓ ${nomeEmpresa} aprovada! Credenciais enviadas para ${email}.`);
   } catch(err) {
-    showToast(`✓ Empresa criada! Erro no e-mail: ${err.message}`);
+    showToast('Aviso: conta pode já existir. Continuando...');
   }
 
+  // 5. Abrir e-mail pronto para envio
+  abrirEmailCredenciais(email, nomeEmpresa, senha);
+  showToast(`✓ ${nomeEmpresa} aprovada! Revise e envie o e-mail.`);
   renderEmpresasAdmin();
+}
+
+function abrirEmailCredenciais(email, nomeEmpresa, senha) {
+  const assunto = encodeURIComponent('Seu acesso ao Portal Digital Pressure');
+  const corpo = encodeURIComponent(
+`Olá, ${nomeEmpresa}!
+
+Seu acesso ao Portal Digital Pressure foi aprovado. Seguem suas credenciais:
+
+🌐 Portal: https://dp-crm-cliente.vercel.app
+📧 E-mail: ${email}
+🔑 Senha: ${senha}
+
+Acesse agora e explore seu painel completo com CRM, financeiro, colaboradores e vagas.
+
+Qualquer dúvida estamos à disposição.
+
+— Equipe Digital Pressure
+grupo@digitalpressure.com.br`
+  );
+  window.open(`mailto:${email}?subject=${assunto}&body=${corpo}`, '_blank');
 }
 
 async function rejeitarSolicitacao(id) {
