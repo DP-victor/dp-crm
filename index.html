@@ -1283,28 +1283,62 @@ async function renderEmpresasAdmin() {
 
 async function enviarConviteAdmin(email, nome) {
   if (!confirm(`Enviar convite para ${email}?`)) return;
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://dp-crm-cliente.vercel.app'
-  });
-  if (error) { showToast('Erro ao enviar: ' + error.message); return; }
-  showToast(`✓ Convite enviado para ${email}!`);
+  showToast('Enviando convite...');
+  try {
+    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/invite-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
+      body: JSON.stringify({ email, empresa_nome: nome })
+    });
+    const result = await res.json();
+    if (result.error) throw new Error(result.error);
+    showToast(`✓ Convite enviado para ${email}!`);
+  } catch(err) {
+    showToast('Erro: ' + err.message);
+  }
 }
 
 async function aprovarSolicitacao(id, nomeEmpresa, email) {
-  if (!confirm(`Aprovar acesso para ${nomeEmpresa}?`)) return;
+  if (!confirm(`Aprovar acesso para ${nomeEmpresa}?\n\nUm e-mail será enviado para ${email} com o link de cadastro de senha.`)) return;
+
   // 1. Criar empresa no banco
-  const { data: emp } = await sb.from('empresas').insert({
+  const { data: emp, error: empErr } = await sb.from('empresas').insert({
     nome: nomeEmpresa, email_admin: email, plano: 'escudo_21'
   }).select().single();
-  // 2. Marcar solicitação como aprovada
-  await sb.from('solicitacoes').update({ status: 'aprovado' }).eq('id', id);
-  // 3. Enviar e-mail de acesso
-  if (emp) {
-    await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://dp-crm-cliente.vercel.app'
-    });
+
+  if (empErr && !empErr.message.includes('duplicate')) {
+    showToast('Erro ao criar empresa: ' + empErr.message); return;
   }
-  showToast(`✓ ${nomeEmpresa} aprovada! E-mail enviado.`);
+
+  // 2. Criar usuário vinculado à empresa
+  const empresaId = emp?.id;
+  if (empresaId) {
+    await sb.from('usuarios').insert({
+      empresa_id: empresaId,
+      nome: nomeEmpresa,
+      email: email,
+      perfil: 'admin'
+    }).select().single();
+  }
+
+  // 3. Marcar solicitação como aprovada
+  await sb.from('solicitacoes').update({ status: 'aprovado' }).eq('id', id);
+
+  // 4. Enviar convite via Edge Function (cria conta + e-mail)
+  try {
+    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/invite-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
+      body: JSON.stringify({ email, empresa_nome: nomeEmpresa })
+    });
+    const result = await res.json();
+    if (result.error) throw new Error(result.error);
+    showToast(`✓ ${nomeEmpresa} aprovada! E-mail enviado para ${email}.`);
+  } catch(err) {
+    // empresa criada mas convite falhou — avisa mas não desfaz
+    showToast(`✓ Empresa criada! Mas erro no e-mail: ${err.message}. Use o botão Convidar.`);
+  }
+
   renderEmpresasAdmin();
 }
 
