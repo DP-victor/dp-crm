@@ -1285,7 +1285,7 @@ async function enviarConviteAdmin(email, nome) {
   if (!confirm(`Enviar convite para ${email}?`)) return;
   showToast('Enviando convite...');
   try {
-    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/invite-user', {
+    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
       body: JSON.stringify({ email, empresa_nome: nome })
@@ -1326,7 +1326,7 @@ async function aprovarSolicitacao(id, nomeEmpresa, email) {
 
   // 4. Enviar convite via Edge Function (cria conta + e-mail)
   try {
-    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/invite-user', {
+    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
       body: JSON.stringify({ email, empresa_nome: nomeEmpresa })
