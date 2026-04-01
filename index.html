@@ -1282,24 +1282,28 @@ async function renderEmpresasAdmin() {
 }
 
 async function enviarConviteAdmin(email, nome) {
-  if (!confirm(`Enviar convite para ${email}?`)) return;
-  showToast('Enviando convite...');
+  const senha = prompt(`Defina uma senha para ${email}:\n(mínimo 8 caracteres)`);
+  if (!senha || senha.length < 8) { alert('Senha inválida. Mínimo 8 caracteres.'); return; }
+  if (!confirm(`Enviar acesso para ${email}?\n\nSenha: ${senha}\n\nO cliente receberá um e-mail com login e senha.`)) return;
+  showToast('Enviando...');
   try {
     const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
-      body: JSON.stringify({ email, empresa_nome: nome })
+      body: JSON.stringify({ email, empresa_nome: nome, senha, modo: 'senha' })
     });
     const result = await res.json();
     if (result.error) throw new Error(result.error);
-    showToast(`✓ Convite enviado para ${email}!`);
+    showToast(`✓ Acesso enviado para ${email}!`);
   } catch(err) {
     showToast('Erro: ' + err.message);
   }
 }
 
 async function aprovarSolicitacao(id, nomeEmpresa, email) {
-  if (!confirm(`Aprovar acesso para ${nomeEmpresa}?\n\nUm e-mail será enviado para ${email} com o link de cadastro de senha.`)) return;
+  const senha = prompt(`Aprovando: ${nomeEmpresa}\n\nDefina uma senha de acesso para ${email}:\n(mínimo 8 caracteres)`);
+  if (!senha || senha.length < 8) { alert('Senha inválida. Mínimo 8 caracteres.'); return; }
+  if (!confirm(`Confirmar aprovação?\n\nEmpresa: ${nomeEmpresa}\nE-mail: ${email}\nSenha: ${senha}\n\nO cliente receberá um e-mail com os dados de acesso.`)) return;
 
   // 1. Criar empresa no banco
   const { data: emp, error: empErr } = await sb.from('empresas').insert({
@@ -1314,29 +1318,26 @@ async function aprovarSolicitacao(id, nomeEmpresa, email) {
   const empresaId = emp?.id;
   if (empresaId) {
     await sb.from('usuarios').insert({
-      empresa_id: empresaId,
-      nome: nomeEmpresa,
-      email: email,
-      perfil: 'admin'
+      empresa_id: empresaId, nome: nomeEmpresa, email: email, perfil: 'admin'
     }).select().single();
   }
 
   // 3. Marcar solicitação como aprovada
   await sb.from('solicitacoes').update({ status: 'aprovado' }).eq('id', id);
 
-  // 4. Enviar convite via Edge Function (cria conta + e-mail)
+  // 4. Enviar credenciais via Edge Function
+  showToast('Aprovando e enviando acesso...');
   try {
     const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
-      body: JSON.stringify({ email, empresa_nome: nomeEmpresa })
+      body: JSON.stringify({ email, empresa_nome: nomeEmpresa, senha, modo: 'senha' })
     });
     const result = await res.json();
     if (result.error) throw new Error(result.error);
-    showToast(`✓ ${nomeEmpresa} aprovada! E-mail enviado para ${email}.`);
+    showToast(`✓ ${nomeEmpresa} aprovada! Credenciais enviadas para ${email}.`);
   } catch(err) {
-    // empresa criada mas convite falhou — avisa mas não desfaz
-    showToast(`✓ Empresa criada! Mas erro no e-mail: ${err.message}. Use o botão Convidar.`);
+    showToast(`✓ Empresa criada! Erro no e-mail: ${err.message}`);
   }
 
   renderEmpresasAdmin();
