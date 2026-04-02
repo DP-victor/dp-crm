@@ -327,7 +327,7 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <div class="card-header" style="padding:14px 18px"><div class="card-title">Pipeline Completo</div><div class="card-badge" id="leadsBadge">0</div></div>
-        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Cliente</th><th>Origem</th><th>Vendedor</th><th>Etapa</th><th>Temp.</th><th>Status</th><th>Valor R$</th><th>Conexão</th><th></th></tr></thead><tbody id="leadsTbody"></tbody></table></div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Cliente</th><th>Origem</th><th>Closer</th><th>BDR/SDR</th><th>Etapa</th><th>Temp.</th><th>Status</th><th>Valor R$</th><th>Conexão</th><th></th></tr></thead><tbody id="leadsTbody"></tbody></table></div>
       </div>
     </div>
 
@@ -344,7 +344,24 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
     <!-- ══ VENDEDORES ══ -->
     <div class="view" id="view-vendedores">
       <div class="kpi-grid g3" id="vendKpis"></div>
-      <div class="card"><div class="card-header"><div class="card-title">Ranking</div></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🏆 Ranking Closers</div>
+            <div class="card-badge">por vendas fechadas</div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Closer</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th><th>Conversão</th></tr></thead><tbody id="closerTbody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎯 Ranking BDR/SDR</div>
+            <div class="card-badge">por prospecção</div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>BDR/SDR</th><th>Leads</th><th>Em Call</th><th>Gerou Venda</th><th>Taxa</th></tr></thead><tbody id="bdrTbody"></tbody></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Ranking Completo — Todos os Leads</div></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Vendedor</th><th>Leads</th><th>Vendas</th><th>Perdidos</th><th>Conversão</th><th>Receita</th><th>Ticket Médio</th></tr></thead><tbody id="vendTbody"></tbody></table></div>
       </div>
     </div>
@@ -503,7 +520,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="fg full"><label class="fl">Nome *</label><input class="fi" id="ml-nome" placeholder="Dr. João Silva"></div>
         <div class="fg"><label class="fl">Telefone</label><input class="fi" id="ml-tel" placeholder="11 99999-9999"></div>
         <div class="fg"><label class="fl">Origem</label><select class="fs" id="ml-origem"><option>Ligação</option><option>Indicação</option><option>Evento</option><option>MLS</option><option>Instagram</option><option>Outros</option></select></div>
-        <div class="fg"><label class="fl">Vendedor</label><select class="fs" id="ml-vend"><option>Pedro</option><option>Victor</option><option>Esdras</option></select></div>
+        <div class="fg"><label class="fl">Closer (vendedor)</label><input class="fi" id="ml-vend" placeholder="Nome do closer"/></div>
+        <div class="fg"><label class="fl">Prospectador (BDR/SDR)</label><input class="fi" id="ml-prosp" placeholder="Nome do BDR/SDR"/></div>
         <div class="fg"><label class="fl">Produto</label><select class="fs" id="ml-prod"><option>Escudo 21</option><option>Aceleração 6 meses</option></select></div>
         <div class="fg"><label class="fl">Etapa</label><select class="fs" id="ml-etapa"><option value="1">Conexão 1</option><option value="2">Apresentação 2</option><option value="3">Speech 3</option><option value="4">Fechamento 4</option><option value="5">Referido 5</option></select></div>
         <div class="fg"><label class="fl">Temperatura</label><select class="fs" id="ml-temp"><option value="quente">🔥 Quente</option><option value="morno">🌡️ Morno</option><option value="frio">❄️ Frio</option></select></div>
@@ -585,7 +603,7 @@ async function loadLeadsFromDB(){
   if(data&&data.length){
     leads=data.map(l=>({
       id:l.id, nome:l.nome, tel:l.telefone||'', origem:l.origem||'',
-      vendedor:l.vendedor||'', produto:l.produto||'',
+      vendedor:l.vendedor||'', prospectador:l.prospectador||'', produto:l.produto||'',
       ordem:{Conexão:1,Apresentação:2,Speech:3,Fechamento:4,Referido:5}[l.etapa]||1,
       status:l.status||'ativo', temp:l.temperatura||'',
       receita:Number(l.receita)||0, conexao:l.conexao||'', obs:l.observacoes||''
@@ -599,7 +617,7 @@ async function saveLeadToDB(lead){
   const payload={
     empresa_id:'11111111-1111-1111-1111-111111111111',
     nome:lead.nome, telefone:lead.tel||null, origem:lead.origem,
-    vendedor:lead.vendedor, produto:lead.produto,
+    vendedor:lead.vendedor, prospectador:lead.prospectador||null, produto:lead.produto,
     etapa:etapaMap[lead.ordem]||'Conexão', status:lead.status,
     temperatura:lead.temp||null, receita:lead.receita||0,
     conexao:lead.conexao||null, observacoes:lead.obs||null,
@@ -815,7 +833,8 @@ function renderLeads(){
   document.getElementById('leadsTbody').innerHTML=f.map(l=>`<tr>
     <td class="td-bold">${l.nome}</td>
     <td>${l.origem}</td>
-    <td><select class="ed-sel" onchange="updateLead(${l.id},'vendedor',this.value)">${['Pedro','Victor','Esdras'].map(v=>`<option${v===l.vendedor?' selected':''}>${v}</option>`).join('')}</select></td>
+    <td><input class="ed-inp" value="${l.vendedor||''}" placeholder="Closer" onchange="updateLead(${l.id},'vendedor',this.value)" style="min-width:90px"></td>
+    <td><input class="ed-inp" value="${l.prospectador||''}" placeholder="BDR/SDR" onchange="updateLead(${l.id},'prospectador',this.value)" style="min-width:90px"></td>
     <td><select class="ed-sel" onchange="updateLead(${l.id},'ordem',+this.value)">${[1,2,3,4,5].map(n=>`<option value="${n}"${n===l.ordem?' selected':''}>${EN[n]}</option>`).join('')}</select></td>
     <td><select class="ed-sel" onchange="updateLead(${l.id},'temp',this.value)">${['','quente','morno','frio'].map(t=>`<option value="${t}"${t===l.temp?' selected':''}>${t?{quente:'🔥',morno:'🌡️',frio:'❄️'}[t]+' '+t:'—'}</option>`).join('')}</select></td>
     <td><select class="ed-sel" onchange="updateLead(${l.id},'status',this.value)"><option value="ativo"${l.status==='ativo'?' selected':''}>● Ativo</option><option value="venda"${l.status==='venda'?' selected':''}>✓ Venda</option><option value="perdido"${l.status==='perdido'?' selected':''}>✗ Perdido</option></select></td>
@@ -848,8 +867,55 @@ function renderVendedores(){
   const s=compute();
   const vends=Object.entries(s.vendedores).sort((a,b)=>b[1].vendas-a[1].vendas);
   const totR=vends.reduce((sum,[,d])=>sum+d.receita,0);
-  document.getElementById('vendKpis').innerHTML=[{l:'Vendedores',v:vends.length,a:'--cyan'},{l:'Top Vendedor',v:vends[0]?vends[0][0]:'—',a:'--green'},{l:'Receita Total',v:'R$ '+fmt(totR),a:'--orange'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-  document.getElementById('vendTbody').innerHTML=vends.map(([nm,d],i)=>`<tr><td style="color:var(--cyan);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td><td class="td-bold">${nm}</td><td>${d.leads}</td><td style="color:var(--green);font-weight:700">${d.vendas}</td><td style="color:var(--red)">${d.perdidos}</td><td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td><td style="color:var(--green);font-family:'DM Mono',monospace">${d.receita>0?'R$ '+fmt(d.receita):'—'}</td><td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.vendas>0?'R$ '+fmt(d.receita/d.vendas):'—'}</td></tr>`).join('');
+
+  document.getElementById('vendKpis').innerHTML=[
+    {l:'Closers',v:vends.length,a:'--cyan'},
+    {l:'Top Closer',v:vends[0]?vends[0][0]:'—',a:'--green'},
+    {l:'Receita Total',v:'R$ '+fmt(totR),a:'--orange'}
+  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
+
+  // 🏆 Ranking Closers
+  const closerEl=document.getElementById('closerTbody');
+  if(closerEl)closerEl.innerHTML=vends.length?vends.map(([nm,d],i)=>`<tr>
+    <td style="color:var(--cyan);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td>
+    <td class="td-bold">${nm}</td>
+    <td style="color:var(--green);font-weight:700">${d.vendas}</td>
+    <td style="color:var(--green);font-family:'DM Mono',monospace">${d.receita>0?'R$ '+fmt(d.receita):'—'}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.vendas>0?'R$ '+fmt(d.receita/d.vendas):'—'}</td>
+    <td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td>
+  </tr>`).join(''):'<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Sem dados ainda</td></tr>';
+
+  // 🎯 Ranking BDR/SDR
+  const bdrMap={};
+  leads.forEach(l=>{
+    const p=l.prospectador;
+    if(!p||p==='—'||p==='')return;
+    if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};
+    bdrMap[p].total++;
+    if(l.ordem>=2)bdrMap[p].emCall++;
+    if(l.status==='venda')bdrMap[p].geramVenda++;
+  });
+  const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].geramVenda-a[1].geramVenda);
+  const bdrEl=document.getElementById('bdrTbody');
+  if(bdrEl)bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr>
+    <td style="color:var(--orange);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td>
+    <td class="td-bold">${nm}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.total}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--cyan)">${d.emCall}</td>
+    <td style="color:var(--green);font-weight:700">${d.geramVenda}</td>
+    <td style="color:${d.emCall>0&&(d.geramVenda/d.emCall)>.2?'var(--green)':'var(--yellow)'}">${d.emCall>0?((d.geramVenda/d.emCall)*100).toFixed(0):0}%</td>
+  </tr>`).join(''):'<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Preencha o campo BDR/SDR nos leads</td></tr>';
+
+  // Ranking completo
+  document.getElementById('vendTbody').innerHTML=vends.map(([nm,d],i)=>`<tr>
+    <td style="color:var(--cyan);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td>
+    <td class="td-bold">${nm}</td><td>${d.leads}</td>
+    <td style="color:var(--green);font-weight:700">${d.vendas}</td>
+    <td style="color:var(--red)">${d.perdidos}</td>
+    <td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td>
+    <td style="color:var(--green);font-family:'DM Mono',monospace">${d.receita>0?'R$ '+fmt(d.receita):'—'}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.vendas>0?'R$ '+fmt(d.receita/d.vendas):'—'}</td>
+  </tr>`).join('');
 }
 
 // ══════════════════════════════════════════════════
@@ -1087,7 +1153,7 @@ function closeModal(type){document.getElementById('modal'+type.charAt(0).toUpper
 function saveLead(){
   const nome=document.getElementById('ml-nome').value.trim();
   if(!nome){alert('Nome obrigatório');return;}
-  const lead={id:nextId++,nome,tel:document.getElementById('ml-tel').value,origem:document.getElementById('ml-origem').value,vendedor:document.getElementById('ml-vend').value,produto:document.getElementById('ml-prod').value,ordem:+document.getElementById('ml-etapa').value,status:document.getElementById('ml-status').value,temp:document.getElementById('ml-temp').value,receita:+document.getElementById('ml-val').value||0,conexao:document.getElementById('ml-data').value||new Date().toLocaleDateString('pt-BR'),obs:document.getElementById('ml-obs').value};
+  const lead={id:nextId++,nome,tel:document.getElementById('ml-tel').value,origem:document.getElementById('ml-origem').value,vendedor:document.getElementById('ml-vend').value,prospectador:document.getElementById('ml-prosp').value,produto:document.getElementById('ml-prod').value,ordem:+document.getElementById('ml-etapa').value,status:document.getElementById('ml-status').value,temp:document.getElementById('ml-temp').value,receita:+document.getElementById('ml-val').value||0,conexao:document.getElementById('ml-data').value||new Date().toLocaleDateString('pt-BR'),obs:document.getElementById('ml-obs').value};
   leads.push(lead);
   saveLeadToDB(lead);
   closeModal('lead');
