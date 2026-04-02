@@ -245,7 +245,8 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
   </div>
   <nav class="nav">
     <div class="nav-label">CRM</div>
-    <div class="nav-item active" onclick="nav('overview',this)"><span class="ic">◈</span>Visão Geral</div>
+    <div class="nav-item" onclick="nav('dashboard',this)"><span class="ic">◈</span>Dashboard</div>
+    <div class="nav-item" onclick="nav('overview',this)"><span class="ic">◉</span>Visão Geral</div>
     <div class="nav-item" onclick="nav('kanban',this)"><span class="ic">▦</span>Kanban</div>
     <div class="nav-item" onclick="nav('leads',this)"><span class="ic">◉</span>Leads & Pipeline</div>
     <div class="nav-item" onclick="nav('funil',this)"><span class="ic">▽</span>Funil</div>
@@ -277,17 +278,89 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
 <div class="main">
   <div class="topbar">
     <div>
-      <div class="page-title" id="pageTitle">Visão Geral</div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
       <div class="page-sub">CRM + Financeiro + Operacional · <span id="nowTime"></span></div>
     </div>
     <div class="topbar-right">
       <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+      <!-- FILTRO DE DATA GLOBAL -->
+      <select id="filter-periodo" onchange="aplicarFiltro()" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer">
+        <option value="todos">Todos os períodos</option>
+        <option value="hoje">Hoje</option>
+        <option value="semana">Esta semana</option>
+        <option value="mes" selected>Este mês</option>
+        <option value="mes_passado">Mês passado</option>
+        <option value="personalizado">Personalizado</option>
+      </select>
+      <input type="date" id="filter-de" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;outline:none" onchange="aplicarFiltro()"/>
+      <input type="date" id="filter-ate" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;outline:none" onchange="aplicarFiltro()"/>
       <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ CSV</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('lead')">+ Lead</button>
     </div>
   </div>
 
   <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="view" id="view-dashboard">
+      <!-- Tabs de área -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <div class="dash-tab active" onclick="switchDashTab('comercial',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid var(--cyan);color:var(--cyan)">COMERCIAL</div>
+        <div class="dash-tab" onclick="switchDashTab('financeiro_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">FINANCEIRO</div>
+        <div class="dash-tab" onclick="switchDashTab('operacional_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">OPERACIONAL</div>
+        <div class="dash-tab" onclick="switchDashTab('rh_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">RH</div>
+      </div>
+
+      <!-- COMERCIAL -->
+      <div class="dash-panel active" id="dash-comercial">
+        <div class="kpi-grid g4" id="dash-com-kpis"></div>
+        <div class="grid3">
+          <div class="card"><div class="card-header"><div class="card-title">Funil de Conversão</div></div><div id="dash-com-funil"></div></div>
+          <div>
+            <div class="card"><div class="card-header"><div class="card-title">Temperatura</div></div><div id="dash-com-temp"></div></div>
+            <div class="card"><div class="card-header"><div class="card-title">Origem</div></div><div id="dash-com-origem"></div></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏆 Ranking Closers</div><div class="card-badge">período filtrado</div></div>
+            <table class="tbl"><thead><tr><th></th><th>Closer</th><th>Vendas</th><th>Receita</th><th>Conversão</th></tr></thead>
+            <tbody id="dash-closer-tbody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🎯 Ranking BDR/SDR</div><div class="card-badge">período filtrado</div></div>
+            <table class="tbl"><thead><tr><th></th><th>BDR/SDR</th><th>Leads</th><th>Em Call</th><th>Vendas</th></tr></thead>
+            <tbody id="dash-bdr-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINANCEIRO -->
+      <div class="dash-panel" id="dash-financeiro_dash" style="display:none">
+        <div class="kpi-grid g4" id="dash-fin-kpis"></div>
+        <div class="grid2">
+          <div class="card"><div class="card-header"><div class="card-title">📊 DRE do Período</div></div><div id="dash-fin-dre"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">📉 Análise de Margem</div></div><div id="dash-fin-margem"></div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">Receita por Origem — Período</div></div><div id="dash-fin-origem"></div></div>
+      </div>
+
+      <!-- OPERACIONAL -->
+      <div class="dash-panel" id="dash-operacional_dash" style="display:none">
+        <div class="kpi-grid g3" id="dash-op-kpis"></div>
+        <div class="grid2">
+          <div class="card"><div class="card-header"><div class="card-title">Clientes Ativos</div></div><div id="dash-op-clientes"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Plano de Ação — Resumo</div></div><div id="dash-op-plano"></div></div>
+        </div>
+      </div>
+
+      <!-- RH -->
+      <div class="dash-panel" id="dash-rh_dash" style="display:none">
+        <div class="kpi-grid g3" id="dash-rh-kpis"></div>
+        <div class="card"><div class="card-header"><div class="card-title">👥 Time Ativo</div></div><div id="dash-rh-time"></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">💼 Vagas Abertas</div></div><div id="dash-rh-vagas"></div></div>
+      </div>
+    </div>
 
     <!-- ══ OVERVIEW ══ -->
     <div class="view active" id="view-overview">
@@ -715,24 +788,25 @@ let planoChecks={};
 // COMPUTED
 // ══════════════════════════════════════════════════
 function compute(){
-  const total=leads.length;
-  const vendas=leads.filter(l=>l.status==='venda');
-  const perdidos=leads.filter(l=>l.status==='perdido');
-  const ativos=leads.filter(l=>l.status==='ativo');
+  const ls=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
+  const total=ls.length;
+  const vendas=ls.filter(l=>l.status==='venda');
+  const perdidos=ls.filter(l=>l.status==='perdido');
+  const ativos=ls.filter(l=>l.status==='ativo');
   const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
   const liquido=receita*0.77;
   const txConv=total>0?((vendas.length/total)*100).toFixed(1):0;
   const ticket=vendas.length>0?(receita/vendas.length):0;
   const etapas={1:0,2:0,3:0,4:0,5:0};
-  leads.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
+  ls.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
   const temps={quente:0,morno:0,frio:0};
-  leads.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
+  ls.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
   const origens={};
-  leads.forEach(l=>{origens[l.origem]=(origens[l.origem]||0)+1;});
+  ls.forEach(l=>{origens[l.origem]=(origens[l.origem]||0)+1;});
   const fases={aquisicao:0,conversao:0,expansao:0};
-  leads.forEach(l=>{if(l.ordem<=2)fases.aquisicao++;else if(l.ordem<=4)fases.conversao++;else fases.expansao++;});
+  ls.forEach(l=>{if(l.ordem<=2)fases.aquisicao++;else if(l.ordem<=4)fases.conversao++;else fases.expansao++;});
   const vendedores={};
-  leads.forEach(l=>{const v=l.vendedor||'—';if(!vendedores[v])vendedores[v]={leads:0,vendas:0,perdidos:0,receita:0};vendedores[v].leads++;if(l.status==='venda'){vendedores[v].vendas++;vendedores[v].receita+=Number(l.receita);}if(l.status==='perdido')vendedores[v].perdidos++;});
+  ls.forEach(l=>{const v=l.vendedor||'—';if(!vendedores[v])vendedores[v]={leads:0,vendas:0,perdidos:0,receita:0};vendedores[v].leads++;if(l.status==='venda'){vendedores[v].vendas++;vendedores[v].receita+=Number(l.receita);}if(l.status==='perdido')vendedores[v].perdidos++;});
   const totalCustos=custos.reduce((s,c)=>s+Number(c.valor),0);
   const lucro=liquido-totalCustos;
   const margemLiq=liquido>0?((lucro/liquido)*100).toFixed(1):0;
@@ -769,9 +843,10 @@ function renderOverview(){
 // KANBAN
 // ══════════════════════════════════════════════════
 function renderKanban(){
+  const ls=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
   const cols=[1,2,3,4,5];
   document.getElementById('kanbanWrap').innerHTML=cols.map(e=>{
-    const items=leads.filter(l=>l.ordem===e);
+    const items=ls.filter(l=>l.ordem===e);
     return`<div class="kanban-col">
       <div class="kanban-head" style="border-top:3px solid ${EC[e]}">
         <div class="kanban-title">${EN[e]}</div>
@@ -818,11 +893,12 @@ function moverKanban(id,dir){
 // LEADS TABLE
 // ══════════════════════════════════════════════════
 function renderLeads(){
+  const base=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
   const q=(document.getElementById('srchQ').value||'').toLowerCase();
   const fs=document.getElementById('fStatus').value;
   const ft=document.getElementById('fTemp').value;
   const fe=document.getElementById('fEtapa').value;
-  let f=leads.filter(l=>{
+  let f=base.filter(l=>{
     const mq=!q||l.nome.toLowerCase().includes(q)||l.vendedor.toLowerCase().includes(q)||l.origem.toLowerCase().includes(q);
     const ms=!fs||(fs==='ativo'?l.status==='ativo':l.status===fs);
     const mt=!ft||l.temp===ft;
@@ -1203,7 +1279,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 // ══════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════
-const viewTitles={overview:'Visão Geral',kanban:'Kanban — Pipeline Visual',leads:'Leads & Pipeline',funil:'Funil Comercial',vendedores:'Vendedores',financeiro:'Dashboard Financeiro',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
+const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Kanban — Pipeline Visual',leads:'Leads & Pipeline',funil:'Funil Comercial',vendedores:'Vendedores',financeiro:'Dashboard Financeiro',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
 function nav(name,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const view = document.getElementById('view-'+name);
@@ -1213,7 +1289,8 @@ function nav(name,el){
   document.getElementById('pageTitle').textContent=viewTitles[name]||name;
   if(name==='performance')renderPerformance();
   if(name==='empresas_admin')renderEmpresasAdmin();
-  renderAll();
+  if(name==='dashboard'){renderDashboard();}
+  else renderAll();
 }
 
 function renderAll(){
@@ -1221,7 +1298,243 @@ function renderAll(){
   renderVendedores();renderFinanceiro();renderProjecao();gerarPlano();renderClientes();
 }
 
-// ── PERFORMANCE CLIENTES ──────────────────────────────────
+// ── FILTRO DE DATA GLOBAL ──────────────────────────────────
+let leadsFiltrados = [];
+
+function getFiltroRange(){
+  const p = document.getElementById('filter-periodo')?.value || 'todos';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  let de = null, ate = null;
+  if(p === 'hoje'){ de = new Date(hoje); ate = new Date(hoje); ate.setHours(23,59,59,999); }
+  else if(p === 'semana'){ de = new Date(hoje); de.setDate(hoje.getDate()-hoje.getDay()); ate = new Date(de); ate.setDate(de.getDate()+6); ate.setHours(23,59,59,999); }
+  else if(p === 'mes'){ de = new Date(hoje.getFullYear(), hoje.getMonth(), 1); ate = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0, 23, 59, 59, 999); }
+  else if(p === 'mes_passado'){ de = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1); ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 23, 59, 59, 999); }
+  else if(p === 'personalizado'){
+    const dv = document.getElementById('filter-de')?.value;
+    const av = document.getElementById('filter-ate')?.value;
+    if(dv) de = new Date(dv+'T00:00:00');
+    if(av) { ate = new Date(av+'T23:59:59'); }
+  }
+  return { de, ate };
+}
+
+function aplicarFiltro(){
+  const p = document.getElementById('filter-periodo')?.value;
+  const deEl = document.getElementById('filter-de');
+  const ateEl = document.getElementById('filter-ate');
+  if(deEl) deEl.style.display = p === 'personalizado' ? 'block' : 'none';
+  if(ateEl) ateEl.style.display = p === 'personalizado' ? 'block' : 'none';
+
+  const { de, ate } = getFiltroRange();
+  if(de && ate){
+    leadsFiltrados = leads.filter(l => {
+      if(!l.conexao) return false;
+      const d = new Date(l.conexao.includes('/') ? l.conexao.split('/').reverse().join('-') : l.conexao);
+      return d >= de && d <= ate;
+    });
+  } else {
+    leadsFiltrados = [...leads];
+  }
+  renderAll();
+  if(document.getElementById('view-dashboard')?.classList.contains('active')) renderDashboard();
+}
+
+function getLeadsAtivos(){ return leadsFiltrados.length > 0 || document.getElementById('filter-periodo')?.value !== 'todos' ? leadsFiltrados : leads; }
+
+// ── DASHBOARD POR ÁREA ─────────────────────────────────────
+function switchDashTab(area, el){
+  document.querySelectorAll('.dash-tab').forEach(t=>{ t.style.borderBottomColor='transparent'; t.style.color='var(--text2)'; });
+  document.querySelectorAll('.dash-panel').forEach(p=>p.style.display='none');
+  el.style.borderBottomColor='var(--cyan)'; el.style.color='var(--cyan)';
+  document.getElementById('dash-'+area).style.display='block';
+  renderDashArea(area);
+}
+
+async function renderDashboard(){
+  renderDashArea('comercial');
+}
+
+function renderDashArea(area){
+  const ls = getLeadsAtivos();
+  if(area === 'comercial') renderDashComercial(ls);
+  else if(area === 'financeiro_dash') renderDashFinanceiro(ls);
+  else if(area === 'operacional_dash') renderDashOperacional();
+  else if(area === 'rh_dash') renderDashRH();
+}
+
+function renderDashComercial(ls){
+  const vendas=ls.filter(l=>l.status==='venda');
+  const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
+  const txConv=ls.length>0?((vendas.length/ls.length)*100).toFixed(1):0;
+  const ticket=vendas.length>0?(receita/vendas.length):0;
+
+  const kpis = document.getElementById('dash-com-kpis');
+  if(kpis) kpis.innerHTML=[
+    {l:'Total Leads',v:ls.length,sub:`${ls.filter(l=>l.status==='ativo').length} ativos`,a:'--cyan'},
+    {l:'Vendas',v:vendas.length,sub:`${ls.filter(l=>l.status==='perdido').length} perdidos`,a:'--green'},
+    {l:'Receita',v:'R$ '+fmt(receita),sub:`ticket R$ ${fmt(ticket)}`,a:'--orange'},
+    {l:'Conversão',v:txConv+'%',sub:'no período',a:'--yellow'},
+  ].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+
+  // Funil
+  const etapas={1:0,2:0,3:0,4:0,5:0};
+  ls.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
+  const maxE=Math.max(...Object.values(etapas),1);
+  const funilEl=document.getElementById('dash-com-funil');
+  if(funilEl) funilEl.innerHTML=Object.entries(etapas).map(([k,v])=>`<div class="fn-row"><div class="fn-lbl">${EN[k]}</div><div class="fn-track"><div class="fn-bar" style="width:${v>0?Math.max((v/maxE)*100,5):0}%;background:${EC[k]}"><span>${v>0?v:''}</span></div></div><div class="fn-n">${v}</div></div>`).join('');
+
+  // Temperatura
+  const temps={quente:0,morno:0,frio:0};
+  ls.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
+  const tempEl=document.getElementById('dash-com-temp');
+  if(tempEl) tempEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[['🔥','Quente',temps.quente||0,'var(--orange)'],['🌡️','Morno',temps.morno||0,'var(--yellow)'],['❄️','Frio',temps.frio||0,'#4A90E2']].map(([ic,lb,vl,cl])=>`<div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center"><div style="font-size:16px">${ic}</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${cl}">${vl}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text2)">${lb}</div></div>`).join('')}</div>`;
+
+  // Origem
+  const origens={};ls.forEach(l=>{origens[l.origem]=(origens[l.origem]||0)+1;});
+  const maxO=Math.max(...Object.values(origens),1);
+  const origEl=document.getElementById('dash-com-origem');
+  if(origEl) origEl.innerHTML=Object.entries(origens).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text2)">${k}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:55px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--cyan);width:${(v/maxO)*100}%;border-radius:2px"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:26px;text-align:right">${ls.length>0?((v/ls.length)*100).toFixed(0):0}%</span></div></div>`).join('');
+
+  // Ranking Closers com foto
+  const closerMap={};
+  ls.forEach(l=>{
+    const v=l.vendedor||'—';
+    if(!closerMap[v])closerMap[v]={leads:0,vendas:0,receita:0,foto:''};
+    closerMap[v].leads++;
+    if(l.status==='venda'){closerMap[v].vendas++;closerMap[v].receita+=Number(l.receita);}
+  });
+  const closers=Object.entries(closerMap).sort((a,b)=>b[1].vendas-a[1].vendas);
+  const closerEl=document.getElementById('dash-closer-tbody');
+  if(closerEl) closerEl.innerHTML=closers.length?closers.map(([nm,d],i)=>`<tr>
+    <td style="padding:8px 10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td>
+    <td class="td-bold">${nm}</td>
+    <td style="color:var(--green);font-weight:700">${d.vendas}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--cyan)">${d.receita>0?'R$ '+fmt(d.receita):'—'}</td>
+    <td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Sem dados no período</td></tr>';
+
+  // Ranking BDR/SDR com foto
+  const bdrMap={};
+  ls.forEach(l=>{
+    const p=l.prospectador;if(!p||p==='')return;
+    if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};
+    bdrMap[p].total++;if(l.ordem>=2)bdrMap[p].emCall++;if(l.status==='venda')bdrMap[p].geramVenda++;
+  });
+  const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].geramVenda-a[1].geramVenda);
+  const bdrEl=document.getElementById('dash-bdr-tbody');
+  if(bdrEl) bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr>
+    <td style="padding:8px 10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--yellow));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td>
+    <td class="td-bold">${nm}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.total}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--cyan)">${d.emCall}</td>
+    <td style="color:var(--green);font-weight:700">${d.geramVenda}</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Preencha o campo BDR/SDR nos leads</td></tr>';
+}
+
+function renderDashFinanceiro(ls){
+  const vendas=ls.filter(l=>l.status==='venda');
+  const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
+  const totalCustos=custos.reduce((s,c)=>s+Number(c.valor),0);
+  const tax=0.23; const liquido=receita*(1-tax); const lucro=liquido-totalCustos;
+  const margem=liquido>0?((lucro/liquido)*100).toFixed(1):0;
+
+  const kpis=document.getElementById('dash-fin-kpis');
+  if(kpis) kpis.innerHTML=[
+    {l:'Receita Bruta',v:'R$ '+fmt(receita),a:'--cyan'},
+    {l:'Receita Líquida',v:'R$ '+fmt(liquido),a:'--cyan2'},
+    {l:'Total Custos',v:'R$ '+fmt(totalCustos),a:'--orange'},
+    {l:'Resultado',v:'R$ '+fmt(lucro),a:lucro>=0?'--green':'--red'},
+  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
+
+  const dreEl=document.getElementById('dash-fin-dre');
+  if(dreEl) dreEl.innerHTML=[
+    ['(+) Receita Bruta',receita,'pos'],
+    ['(-) Impostos ~23%',receita*tax,'neg'],
+    ['(=) Receita Líquida',liquido,'pos'],
+    ['(-) Custos Fixos',totalCustos,'neg'],
+    ['(=) Resultado',lucro,lucro>=0?'pos':'neg'],
+    ['Margem',margem+'%',+margem>=20?'pos':'warn'],
+  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${typeof v==='number'?'R$ '+fmt(v):v}</span></div>`).join('');
+
+  const recOrig={};
+  vendas.forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
+  const maxRO=Math.max(...Object.values(recOrig),1);
+  const origEl=document.getElementById('dash-fin-origem');
+  if(origEl) origEl.innerHTML=Object.keys(recOrig).length?
+    Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:'DM Mono',monospace">R$ ${fmt(v)}</span></div></div></div>`).join(''):
+    '<div style="color:var(--text2);font-size:12px;padding:8px 0">Nenhuma venda no período</div>';
+
+  const margemEl=document.getElementById('dash-fin-margem');
+  const ticket=vendas.length>0?receita/vendas.length:0;
+  if(margemEl) margemEl.innerHTML=[
+    ['Ticket Médio',`R$ ${fmt(ticket)}`,'pos'],
+    ['Margem Bruta','77%','pos'],
+    ['Ponto de Equilíbrio',`R$ ${fmt(totalCustos/0.77)}`,'warn'],
+    ['Vendas p/ Breakeven',`${Math.ceil(totalCustos/0.77/(ticket||1))} vendas`,'warn'],
+    ['Margem Operacional',margem+'%',+margem>=20?'pos':+margem>=0?'warn':'neg'],
+  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${v}</span></div>`).join('');
+}
+
+function renderDashOperacional(){
+  const kpis=document.getElementById('dash-op-kpis');
+  if(kpis) kpis.innerHTML=[
+    {l:'Clientes Ativos',v:clientesAtivos.length,a:'--cyan'},
+    {l:'Reuniões Entregues',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0),a:'--green'},
+    {l:'Reuniões Pendentes',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0),a:'--orange'},
+  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
+
+  const cl=document.getElementById('dash-op-clientes');
+  if(cl) cl.innerHTML=clientesAtivos.length?clientesAtivos.map(c=>{
+    const done=c.reunioes.filter(r=>r.status==='entregue').length;
+    const pct=Math.round((done/24)*100);
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div>
+      <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.resp} · ${c.produto}</div></div>
+      <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cyan)">${done}/24 reuniões</div>
+      <div style="width:80px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:4px"><div style="height:100%;background:var(--cyan);width:${pct}%"></div></div></div>
+    </div>`;
+  }).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum cliente ativo</div>';
+
+  const plEl=document.getElementById('dash-op-plano');
+  if(plEl){
+    const s=compute();
+    const acoes=[];
+    if(leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length} leads quentes em aberto`,tag:'URGENTE',cor:'var(--orange)'});
+    if(leads.filter(l=>!l.temp&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>!l.temp&&l.status==='ativo').length} leads sem temperatura`,tag:'ESTA SEMANA',cor:'var(--yellow)'});
+    if(leads.filter(l=>l.ordem===4&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>l.ordem===4&&l.status==='ativo').length} leads em Fechamento`,tag:'ESTE MÊS',cor:'var(--green)'});
+    plEl.innerHTML=acoes.length?acoes.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text)">${a.titulo}</span><span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.3);color:${a.cor}">${a.tag}</span></div>`).join(''):'<div style="color:var(--green);font-size:12px;padding:12px 0">✓ Sem alertas críticos</div>';
+  }
+}
+
+async function renderDashRH(){
+  const {data:colabs}=await sb.from('colaboradores').select('*').eq('empresa_id','11111111-1111-1111-1111-111111111111').eq('status','ativo');
+  const {data:vagas}=await sb.from('vagas').select('*').eq('empresa_id','11111111-1111-1111-1111-111111111111').eq('status','aberta');
+  const folha=(colabs||[]).reduce((s,c)=>s+Number(c.salario),0);
+
+  const kpis=document.getElementById('dash-rh-kpis');
+  if(kpis) kpis.innerHTML=[
+    {l:'Colaboradores Ativos',v:(colabs||[]).length,a:'--cyan'},
+    {l:'Folha Mensal',v:'R$ '+fmt(folha),a:'--orange'},
+    {l:'Vagas Abertas',v:(vagas||[]).length,a:'--green'},
+  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
+
+  const timeEl=document.getElementById('dash-rh-time');
+  if(timeEl) timeEl.innerHTML=(colabs||[]).length?(colabs||[]).map(c=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      ${c.foto_url?`<img src="${c.foto_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#000;flex-shrink:0">${(c.nome||'').slice(0,2).toUpperCase()}</div>`}
+      <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div>
+      <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.cargo||'—'}</div></div>
+      <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">R$ ${fmt(c.salario||0)}</div>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${c.admissao?calcTempo(c.admissao):'—'}</div></div>
+    </div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum colaborador cadastrado</div>';
+
+  const vagEl=document.getElementById('dash-rh-vagas');
+  if(vagEl) vagEl.innerHTML=(vagas||[]).length?(vagas||[]).map(v=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">${v.titulo}</div>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,230,118,.12);color:var(--green)">● Aberta</span>
+    </div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhuma vaga aberta</div>';
+}
 async function renderPerformance() {
   const perf = document.getElementById('perf-tbody');
   const perfKpis = document.getElementById('perf-kpis');
@@ -1457,6 +1770,8 @@ function openEmpresaModalAdmin() {
 
 // Clock
 setInterval(()=>{document.getElementById('nowTime').textContent=new Date().toLocaleString('pt-BR');},1000);
+// Inicializar filtro com "este mês"
+window.addEventListener('load',()=>{setTimeout(()=>{aplicarFiltro();},800);});
 renderAll();
 </script>
 </body>
