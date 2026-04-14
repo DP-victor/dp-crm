@@ -217,6 +217,17 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
 /* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--green);border-radius:8px;padding:12px 18px;font-family:'DM Mono',monospace;font-size:12px;color:var(--green);z-index:300;transform:translateY(70px);opacity:0;transition:all .3s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
+
+/* ═══ DIAGNÓSTICOS ═══ */
+.diag-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;transition:border-color .2s;animation:fadeUp .3s ease both}
+.diag-card:hover{border-color:rgba(0,212,255,.2)}
+.diag-nome{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.diag-meta{font-size:12px;color:var(--text2);margin-bottom:3px}
+.diag-fat{font-size:12px;color:var(--cyan);margin-bottom:3px;font-weight:600}
+.diag-data{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px}
+.diag-nivel{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:10px;display:inline-block;margin-bottom:6px}
+.diag-status{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.diag-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -251,6 +262,8 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
     <div class="nav-item" onclick="nav('leads',this)"><span class="ic">◉</span>Leads & Pipeline</div>
     <div class="nav-item" onclick="nav('funil',this)"><span class="ic">▽</span>Funil</div>
     <div class="nav-item" onclick="nav('vendedores',this)"><span class="ic">⊛</span>Vendedores</div>
+    <div class="nav-label">Captação</div>
+    <div class="nav-item" onclick="nav('diagnosticos',this)"><span class="ic">◎</span>Diagnósticos</div>
     <div class="nav-label">Financeiro</div>
     <div class="nav-item" onclick="nav('financeiro',this)"><span class="ic">◎</span>Dashboard Financeiro</div>
     <div class="nav-item" onclick="nav('projecao',this)"><span class="ic">↗</span>Projeção & Metas</div>
@@ -283,7 +296,6 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
     </div>
     <div class="topbar-right">
       <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-      <!-- FILTRO DE DATA GLOBAL -->
       <select id="filter-periodo" onchange="aplicarFiltro()" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer">
         <option value="todos">Todos os períodos</option>
         <option value="hoje">Hoje</option>
@@ -303,15 +315,12 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
 
     <!-- ══ DASHBOARD ══ -->
     <div class="view" id="view-dashboard">
-      <!-- Tabs de área -->
       <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0">
         <div class="dash-tab active" onclick="switchDashTab('comercial',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid var(--cyan);color:var(--cyan)">COMERCIAL</div>
         <div class="dash-tab" onclick="switchDashTab('financeiro_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">FINANCEIRO</div>
         <div class="dash-tab" onclick="switchDashTab('operacional_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">OPERACIONAL</div>
         <div class="dash-tab" onclick="switchDashTab('rh_dash',this)" style="padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">RH</div>
       </div>
-
-      <!-- COMERCIAL -->
       <div class="dash-panel active" id="dash-comercial">
         <div class="kpi-grid g4" id="dash-com-kpis"></div>
         <div class="grid3">
@@ -334,8 +343,6 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
           </div>
         </div>
       </div>
-
-      <!-- FINANCEIRO -->
       <div class="dash-panel" id="dash-financeiro_dash" style="display:none">
         <div class="kpi-grid g4" id="dash-fin-kpis"></div>
         <div class="grid2">
@@ -344,8 +351,6 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
         </div>
         <div class="card"><div class="card-header"><div class="card-title">Receita por Origem — Período</div></div><div id="dash-fin-origem"></div></div>
       </div>
-
-      <!-- OPERACIONAL -->
       <div class="dash-panel" id="dash-operacional_dash" style="display:none">
         <div class="kpi-grid g3" id="dash-op-kpis"></div>
         <div class="grid2">
@@ -353,8 +358,6 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
           <div class="card"><div class="card-header"><div class="card-title">Plano de Ação — Resumo</div></div><div id="dash-op-plano"></div></div>
         </div>
       </div>
-
-      <!-- RH -->
       <div class="dash-panel" id="dash-rh_dash" style="display:none">
         <div class="kpi-grid g3" id="dash-rh-kpis"></div>
         <div class="card"><div class="card-header"><div class="card-title">👥 Time Ativo</div></div><div id="dash-rh-time"></div></div>
@@ -419,17 +422,11 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
       <div class="kpi-grid g3" id="vendKpis"></div>
       <div class="grid2">
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">🏆 Ranking Closers</div>
-            <div class="card-badge">por vendas fechadas</div>
-          </div>
+          <div class="card-header"><div class="card-title">🏆 Ranking Closers</div><div class="card-badge">por vendas fechadas</div></div>
           <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Closer</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th><th>Conversão</th></tr></thead><tbody id="closerTbody"></tbody></table></div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">🎯 Ranking BDR/SDR</div>
-            <div class="card-badge">por prospecção</div>
-          </div>
+          <div class="card-header"><div class="card-title">🎯 Ranking BDR/SDR</div><div class="card-badge">por prospecção</div></div>
           <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>BDR/SDR</th><th>Leads</th><th>Em Call</th><th>Gerou Venda</th><th>Taxa</th></tr></thead><tbody id="bdrTbody"></tbody></table></div>
         </div>
       </div>
@@ -439,21 +436,39 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
       </div>
     </div>
 
+    <!-- ══ DIAGNÓSTICOS ══ -->
+    <div class="view" id="view-diagnosticos">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px">Leads · Diagnóstico</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">Leads captados via diagnostico.digitalpressure.com.br</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="diag-filtro-status" onchange="renderDiagnosticos()" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer">
+            <option value="">Todos os status</option>
+            <option value="novo">Novos</option>
+            <option value="em_contato">Em contato</option>
+            <option value="convertido">Convertidos</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="carregarDiagnosticos()">↺ Atualizar</button>
+        </div>
+      </div>
+      <div class="kpi-grid g4" id="diag-kpis"></div>
+      <div id="diag-lista">
+        <div style="color:var(--text2);font-family:'DM Mono',monospace;font-size:12px;padding:40px;text-align:center">Carregando...</div>
+      </div>
+    </div>
+
     <!-- ══ FINANCEIRO ══ -->
     <div class="view" id="view-financeiro">
       <div class="kpi-grid g4" id="finKpis"></div>
       <div class="grid2">
-        <!-- DRE -->
         <div class="card">
           <div class="card-header"><div class="card-title">📊 DRE Simplificado</div><span style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">Atualização automática</span></div>
           <div id="dreTable"></div>
         </div>
-        <!-- CUSTOS -->
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">💰 Custos Fixos Mensais</div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('custo')">+ Custo</button>
-          </div>
+          <div class="card-header"><div class="card-title">💰 Custos Fixos Mensais</div><button class="btn btn-primary btn-sm" onclick="openModal('custo')">+ Custo</button></div>
           <div id="custosWrap"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
             <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">TOTAL CUSTOS FIXOS</span>
@@ -499,14 +514,12 @@ select.ed-sel option{background:var(--surface2);color:var(--text)}
   </div><!-- content -->
 </div><!-- main -->
 
-<!-- VIEW PERFORMANCE CLIENTES -->
+<!-- VIEW PERFORMANCE + EMPRESAS (injetados via JS) -->
 <script>
-// injeta views extras após o DOM carregar
 document.addEventListener('DOMContentLoaded', function() {
   const content = document.querySelector('.content');
   if (!content) return;
 
-  // Performance view
   const perfView = document.createElement('div');
   perfView.className = 'view';
   perfView.id = 'view-performance';
@@ -523,28 +536,23 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;min-width:900px">
-          <thead>
-            <tr>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap">Empresa</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Faturamento</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Rec. Líquida</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Margem Op.</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Total Leads</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Ligações</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">Conversão</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap">Top Vendedor</th>
-              <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap">Plano</th>
-            </tr>
-          </thead>
-          <tbody id="perf-tbody">
-            <tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:'DM Mono',monospace;font-size:12px">Carregando...</td></tr>
-          </tbody>
+          <thead><tr>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Empresa</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Faturamento</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Rec. Líquida</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Margem Op.</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Total Leads</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Ligações</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">Conversão</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Top Vendedor</th>
+            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Plano</th>
+          </tr></thead>
+          <tbody id="perf-tbody"><tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:'DM Mono',monospace;font-size:12px">Carregando...</td></tr></tbody>
         </table>
       </div>
     </div>`;
   content.appendChild(perfView);
 
-  // Empresas admin view
   const empView = document.createElement('div');
   empView.className = 'view';
   empView.id = 'view-empresas_admin';
@@ -555,18 +563,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
       <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr>
-            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Empresa</th>
-            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">E-mail</th>
-            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Plano</th>
-            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Cadastro</th>
-            <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="emp-admin-tbody">
-          <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--text2);font-family:'DM Mono',monospace;font-size:12px">Carregando...</td></tr>
-        </tbody>
+        <thead><tr>
+          <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Empresa</th>
+          <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">E-mail</th>
+          <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Plano</th>
+          <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Cadastro</th>
+          <th style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left">Ações</th>
+        </tr></thead>
+        <tbody id="emp-admin-tbody"><tr><td colspan="5" style="padding:40px;text-align:center;color:var(--text2);font-family:'DM Mono',monospace;font-size:12px">Carregando...</td></tr></tbody>
       </table>
     </div>
     <div style="margin-top:20px">
@@ -574,12 +578,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="sol-lista" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden"></div>
     </div>`;
   content.appendChild(empView);
-
-  // atualiza nav para incluir as novas views no viewTitles
-  if(typeof viewTitles !== 'undefined') {
-    viewTitles['performance'] = 'Performance dos Clientes';
-    viewTitles['empresas_admin'] = 'Empresas & Convites';
-  }
 });
 </script>
 </div><!-- shell -->
@@ -615,10 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="form-grid">
         <div class="fg full"><label class="fl">Nome do Custo</label><input class="fi" id="mc-nome" placeholder="Ex: Aluguel escritório"></div>
         <div class="fg"><label class="fl">Categoria</label>
-          <select class="fs" id="mc-cat">
-            <option>Marketing</option><option>Infraestrutura</option><option>Equipe</option>
-            <option>Software</option><option>Financeiro</option><option>Outros</option>
-          </select>
+          <select class="fs" id="mc-cat"><option>Marketing</option><option>Infraestrutura</option><option>Equipe</option><option>Software</option><option>Financeiro</option><option>Outros</option></select>
         </div>
         <div class="fg"><label class="fl">Valor Mensal R$</label><input class="fi" id="mc-val" type="number" placeholder="0" min="0"></div>
       </div>
@@ -648,7 +643,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // ══ SUPABASE ══
 const { createClient } = supabase;
-const sb = createClient('https://chxlseszedcnmqqryusz.supabase.co','sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla');
+const SUPABASE_KEY = 'sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla';
+const EMPRESA_ID = '11111111-1111-1111-1111-111111111111';
+const sb = createClient('https://chxlseszedcnmqqryusz.supabase.co', SUPABASE_KEY);
 
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim();
@@ -672,7 +669,7 @@ function initApp(user){
   loadLeadsFromDB();
 }
 async function loadLeadsFromDB(){
-  const {data}=await sb.from('leads').select('*').eq('empresa_id','11111111-1111-1111-1111-111111111111').order('criado_em',{ascending:true});
+  const {data}=await sb.from('leads').select('*').eq('empresa_id',EMPRESA_ID).order('criado_em',{ascending:true});
   if(data&&data.length){
     leads=data.map(l=>({
       id:l.id, nome:l.nome, tel:l.telefone||'', origem:l.origem||'',
@@ -688,7 +685,7 @@ async function loadLeadsFromDB(){
 async function saveLeadToDB(lead){
   const etapaMap={1:'Conexão',2:'Apresentação',3:'Speech',4:'Fechamento',5:'Referido'};
   const payload={
-    empresa_id:'11111111-1111-1111-1111-111111111111',
+    empresa_id:EMPRESA_ID,
     nome:lead.nome, telefone:lead.tel||null, origem:lead.origem,
     vendedor:lead.vendedor, prospectador:lead.prospectador||null, produto:lead.produto,
     etapa:etapaMap[lead.ordem]||'Conexão', status:lead.status,
@@ -710,40 +707,13 @@ checkSession();
 // ══════════════════════════════════════════════════
 // DADOS
 // ══════════════════════════════════════════════════
-const EN = {1:'Conexão',2:'Apresentação',3:'Speech',4:'Fechamento',5:'Referido'};
-const EC = {1:'#00D4FF',2:'#00B8D9',3:'#FF6B35',4:'#FFD93D',5:'#00E676'};
-const CATS = {Marketing:'var(--orange)',Infraestrutura:'var(--cyan)',Equipe:'var(--purple)',Software:'var(--cyan2)',Financeiro:'var(--yellow)',Outros:'var(--text2)'};
-const REUNIOES_PADRAO = [
-  {fase:'MÊS 1',items:[
-    {n:1,t:'Kickoff + Raio-X',resp:'Grupo'},
-    {n:2,t:'Diagnóstico + Payback',resp:'Victor'},
-    {n:3,t:'Implementação Financeira',resp:'Grupo'},
-    {n:4,t:'Dashboard + Direção',resp:'Victor'},
-  ]},
-  {fase:'MÊS 2-3',items:[
-    {n:5,t:'Validação de Execução',resp:'Grupo'},
-    {n:6,t:'Ajuste Operacional',resp:'Grupo'},
-    {n:7,t:'Foco em Resultado',resp:'Grupo'},
-    {n:8,t:'Consolidação',resp:'Grupo'},
-    {n:9,t:'Validação de Execução',resp:'Grupo'},
-    {n:10,t:'Ajuste Operacional',resp:'Grupo'},
-    {n:11,t:'Foco em Resultado',resp:'Grupo'},
-    {n:12,t:'Consolidação',resp:'Grupo'},
-  ]},
-  {fase:'MÊS 4-6',items:[
-    {n:13,t:'Projeção Financeira',resp:'Victor'},
-    {n:14,t:'Otimização',resp:'Victor'},
-    {n:15,t:'Alavancagem',resp:'Grupo'},
-    {n:16,t:'Estruturação',resp:'Grupo'},
-    {n:17,t:'Visão Estratégica',resp:'Grupo'},
-    {n:18,t:'Consolidação Final',resp:'Grupo'},
-    {n:19,t:'Projeção Financeira',resp:'Victor'},
-    {n:20,t:'Otimização',resp:'Victor'},
-    {n:21,t:'Alavancagem',resp:'Grupo'},
-    {n:22,t:'Estruturação',resp:'Grupo'},
-    {n:23,t:'Visão Estratégica',resp:'Grupo'},
-    {n:24,t:'Consolidação Final',resp:'Grupo'},
-  ]},
+const EN={1:'Conexão',2:'Apresentação',3:'Speech',4:'Fechamento',5:'Referido'};
+const EC={1:'#00D4FF',2:'#00B8D9',3:'#FF6B35',4:'#FFD93D',5:'#00E676'};
+const CATS={Marketing:'var(--orange)',Infraestrutura:'var(--cyan)',Equipe:'var(--purple)',Software:'var(--cyan2)',Financeiro:'var(--yellow)',Outros:'var(--text2)'};
+const REUNIOES_PADRAO=[
+  {fase:'MÊS 1',items:[{n:1,t:'Kickoff + Raio-X',resp:'Grupo'},{n:2,t:'Diagnóstico + Payback',resp:'Victor'},{n:3,t:'Implementação Financeira',resp:'Grupo'},{n:4,t:'Dashboard + Direção',resp:'Victor'}]},
+  {fase:'MÊS 2-3',items:[{n:5,t:'Validação de Execução',resp:'Grupo'},{n:6,t:'Ajuste Operacional',resp:'Grupo'},{n:7,t:'Foco em Resultado',resp:'Grupo'},{n:8,t:'Consolidação',resp:'Grupo'},{n:9,t:'Validação de Execução',resp:'Grupo'},{n:10,t:'Ajuste Operacional',resp:'Grupo'},{n:11,t:'Foco em Resultado',resp:'Grupo'},{n:12,t:'Consolidação',resp:'Grupo'}]},
+  {fase:'MÊS 4-6',items:[{n:13,t:'Projeção Financeira',resp:'Victor'},{n:14,t:'Otimização',resp:'Victor'},{n:15,t:'Alavancagem',resp:'Grupo'},{n:16,t:'Estruturação',resp:'Grupo'},{n:17,t:'Visão Estratégica',resp:'Grupo'},{n:18,t:'Consolidação Final',resp:'Grupo'},{n:19,t:'Projeção Financeira',resp:'Victor'},{n:20,t:'Otimização',resp:'Victor'},{n:21,t:'Alavancagem',resp:'Grupo'},{n:22,t:'Estruturação',resp:'Grupo'},{n:23,t:'Visão Estratégica',resp:'Grupo'},{n:24,t:'Consolidação Final',resp:'Grupo'}]},
 ];
 
 let leads=[
@@ -776,7 +746,7 @@ let nextCId=5;
 
 let clientesAtivos=[
   {id:1,nome:"Leticia — Aceleração",resp:"Pedro",produto:"Aceleração 6 meses",inicio:"2026-01-06",obs:"Cliente muito engajada, ótima execução.",
-    reunioes: REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:"pendente",entregavel:"",data:""}))
+    reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:"pendente",entregavel:"",data:""}))
   },
 ];
 let nextCaId=2;
@@ -810,11 +780,118 @@ function compute(){
   const totalCustos=custos.reduce((s,c)=>s+Number(c.valor),0);
   const lucro=liquido-totalCustos;
   const margemLiq=liquido>0?((lucro/liquido)*100).toFixed(1):0;
-  return {total,vendas:vendas.length,perdidos:perdidos.length,ativos:ativos.length,receita,liquido,txConv,ticket,etapas,temps,origens,fases,vendedores,totalCustos,lucro,margemLiq};
+  return{total,vendas:vendas.length,perdidos:perdidos.length,ativos:ativos.length,receita,liquido,txConv,ticket,etapas,temps,origens,fases,vendedores,totalCustos,lucro,margemLiq};
 }
 
 const fmt=n=>Math.round(n).toLocaleString('pt-BR');
 function sBadge(s){const m={venda:['sb-v','✓ Venda'],perdido:['sb-p','✗ Perdido'],ativo:['sb-a','● Ativo']};const[c,t]=m[s]||m.ativo;return`<span class="sb ${c}">${t}</span>`;}
+
+// ══ DIAGNÓSTICOS ══════════════════════════════════
+let diagLeads = [];
+
+async function carregarDiagnosticos(){
+  document.getElementById('diag-lista').innerHTML = '<div style="color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px;padding:40px;text-align:center">Carregando...</div>';
+  const { data, error } = await sb.from('leads_diagnostico').select('*').order('created_at', { ascending: false });
+  if(error){ document.getElementById('diag-lista').innerHTML = `<div style="color:var(--red);font-family:'DM Mono',monospace;font-size:12px;padding:40px;text-align:center">Erro ao carregar: ${error.message}</div>`; return; }
+  diagLeads = data || [];
+  renderDiagnosticos();
+}
+
+function renderDiagnosticos(){
+  const filtroStatus = document.getElementById('diag-filtro-status')?.value || '';
+  const lista = filtroStatus ? diagLeads.filter(l => l.status === filtroStatus) : diagLeads;
+
+  // KPIs
+  const total = diagLeads.length;
+  const novos = diagLeads.filter(l => l.status === 'novo').length;
+  const emContato = diagLeads.filter(l => l.status === 'em_contato').length;
+  const convertidos = diagLeads.filter(l => l.status === 'convertido').length;
+
+  document.getElementById('diag-kpis').innerHTML = [
+    {l:'Total Recebidos', v:total, a:'--cyan'},
+    {l:'Novos', v:novos, a:'--yellow'},
+    {l:'Em Contato', v:emContato, a:'--orange'},
+    {l:'Convertidos', v:convertidos, a:'--green'},
+  ].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
+
+  if(!lista.length){
+    document.getElementById('diag-lista').innerHTML = `<div style="color:var(--text2);font-family:'DM Mono',monospace;font-size:12px;padding:40px;text-align:center">${filtroStatus ? 'Nenhum lead com esse status.' : 'Nenhum lead de diagnóstico ainda.'}</div>`;
+    return;
+  }
+
+  document.getElementById('diag-lista').innerHTML = lista.map(l => {
+    const nivelCor = l.nivel === 'critico' ? 'var(--red)' : l.nivel === 'atencao' ? 'var(--yellow)' : 'var(--cyan)';
+    const nivelBg  = l.nivel === 'critico' ? 'rgba(255,71,87,.12)' : l.nivel === 'atencao' ? 'rgba(255,217,61,.12)' : 'rgba(0,212,255,.1)';
+    const dt = new Date(l.created_at).toLocaleDateString('pt-BR') + ' ' + new Date(l.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const statusLabel = {novo:'Novo', em_contato:'Em contato', convertido:'Convertido'}[l.status] || l.status;
+    const jaConvertido = l.status === 'convertido';
+    const wppNum = (l.whatsapp||'').replace(/\D/g,'');
+    const wppLink = `https://wa.me/55${wppNum}?text=${encodeURIComponent('Olá '+(l.nome||'').split(' ')[0]+'! Vi que você preencheu o diagnóstico da Digital Pressure. Sou o Victor — podemos conversar sobre sua operação?')}`;
+
+    return `<div class="diag-card">
+      <div style="flex:1">
+        <div class="diag-nome">${l.nome || '(sem nome)'}</div>
+        <div class="diag-fat">💰 ${l.faturamento || '—'}</div>
+        <div class="diag-meta">📱 ${l.whatsapp || '—'} &nbsp;·&nbsp; 🏥 ${l.segmento || '—'}</div>
+        <div class="diag-meta">🎯 ${l.objetivo || '—'}</div>
+        <div class="diag-data">${dt}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:160px">
+        <span class="diag-nivel" style="background:${nivelBg};color:${nivelCor};border:.5px solid ${nivelCor}">${l.nivel_label || l.nivel || '—'}</span>
+        <span class="diag-status">${statusLabel}</span>
+        <div class="diag-actions">
+          <a href="${wppLink}" target="_blank" class="btn btn-primary btn-sm">📱 WhatsApp</a>
+          ${!jaConvertido ? `<button class="btn btn-ghost btn-sm" onclick="marcarEmContato('${l.id}')">Em contato</button>` : ''}
+          ${!jaConvertido ? `<button class="btn btn-sm" style="color:var(--green);border:1px solid rgba(0,230,118,.3);background:transparent" onclick="converterParaKanban('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}','${l.whatsapp||''}','${l.faturamento||''}','${l.segmento||''}','${(l.objetivo||'').replace(/'/g,"\\'")}','${l.nivel||''}')">→ Converter</button>` : '<span style="font-size:10px;color:var(--green);font-family:\'DM Mono\',monospace">✓ No Kanban</span>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcarEmContato(diagId){
+  await sb.from('leads_diagnostico').update({ status: 'em_contato' }).eq('id', diagId);
+  showToast('✓ Marcado como em contato');
+  carregarDiagnosticos();
+}
+
+async function converterParaKanban(diagId, nome, whatsapp, faturamento, segmento, objetivo, nivel){
+  if(!confirm(`Converter "${nome}" para o Kanban na etapa Conexão?`)) return;
+
+  const novoLead = {
+    empresa_id: EMPRESA_ID,
+    nome: nome,
+    telefone: whatsapp || null,
+    origem: 'Diagnóstico',
+    vendedor: '',
+    produto: 'Escudo 21',
+    etapa: 'Conexão',
+    status: 'ativo',
+    temperatura: nivel === 'critico' ? 'quente' : nivel === 'atencao' ? 'morno' : 'frio',
+    receita: 0,
+    conexao: new Date().toLocaleDateString('pt-BR'),
+    observacoes: `Origem: Diagnóstico · Faturamento: ${faturamento} · Segmento: ${segmento} · Objetivo: ${objetivo}`,
+    atualizado_em: new Date().toISOString()
+  };
+
+  const { data: leadCriado, error } = await sb.from('leads').insert(novoLead).select().single();
+  if(error){ showToast('Erro ao converter: ' + error.message); return; }
+
+  await sb.from('leads_diagnostico').update({ status: 'convertido', convertido_lead_id: leadCriado.id }).eq('id', diagId);
+
+  // adiciona ao array local
+  leads.push({
+    id: leadCriado.id, nome, tel: whatsapp||'', origem: 'Diagnóstico',
+    vendedor: '', prospectador: '', produto: 'Escudo 21', ordem: 1,
+    status: 'ativo', temp: nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',
+    receita: 0, conexao: new Date().toLocaleDateString('pt-BR'),
+    obs: `Faturamento: ${faturamento} · Segmento: ${segmento} · Objetivo: ${objetivo}`
+  });
+
+  showToast(`✓ ${nome} convertido! Aparece na etapa Conexão.`);
+  carregarDiagnosticos();
+  renderAll();
+}
 
 // ══════════════════════════════════════════════════
 // OVERVIEW
@@ -839,9 +916,7 @@ function renderOverview(){
   document.getElementById('ovRecent').innerHTML=[...leads].slice(-7).reverse().map(l=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:12px;font-weight:700;color:var(--text)">${l.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${EN[l.ordem]||'—'}</div></div>${sBadge(l.status)}</div>`).join('');
 }
 
-// ══════════════════════════════════════════════════
-// KANBAN
-// ══════════════════════════════════════════════════
+// ══ KANBAN ══
 function renderKanban(){
   const ls=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
   const cols=[1,2,3,4,5];
@@ -856,11 +931,7 @@ function renderKanban(){
         ${items.map(l=>`
           <div class="kanban-card" id="kc-${l.id}">
             <div class="kanban-card-name">${l.nome}</div>
-            <div class="kanban-card-meta">
-              <span class="temp-dot t-${l.temp}"></span>
-              <span>${l.temp||'—'}</span>
-              ${sBadge(l.status)}
-            </div>
+            <div class="kanban-card-meta"><span class="temp-dot t-${l.temp}"></span><span>${l.temp||'—'}</span>${sBadge(l.status)}</div>
             <div class="kanban-card-vend" style="margin-top:5px">${l.vendedor||'—'}</div>
             ${l.receita>0?`<div class="kanban-card-valor">R$ ${fmt(l.receita)}</div>`:''}
             <div class="kanban-card-actions">
@@ -880,18 +951,12 @@ function renderKanban(){
 }
 
 function moverKanban(id,dir){
-  const l=leads.find(l=>l.id===id);
-  if(!l)return;
-  const nova=l.ordem+dir;
-  if(nova<1||nova>5)return;
-  l.ordem=nova;
-  showToast(`✓ ${l.nome} → ${EN[nova]}`);
-  renderAll();
+  const l=leads.find(l=>l.id===id);if(!l)return;
+  const nova=l.ordem+dir;if(nova<1||nova>5)return;
+  l.ordem=nova;showToast(`✓ ${l.nome} → ${EN[nova]}`);renderAll();
 }
 
-// ══════════════════════════════════════════════════
-// LEADS TABLE
-// ══════════════════════════════════════════════════
+// ══ LEADS TABLE ══
 function renderLeads(){
   const base=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
   const q=(document.getElementById('srchQ').value||'').toLowerCase();
@@ -923,9 +988,7 @@ function renderLeads(){
 function updateLead(id,f,v){const l=leads.find(l=>l.id===id);if(!l)return;l[f]=v;saveLeadToDB(l);showToast(`✓ ${l.nome} atualizado`);renderAll();}
 function deleteLead(id){if(!confirm('Remover lead?'))return;deleteLeadFromDB(id);leads=leads.filter(l=>l.id!==id);showToast('Removido');renderAll();}
 
-// ══════════════════════════════════════════════════
-// FUNIL
-// ══════════════════════════════════════════════════
+// ══ FUNIL ══
 function renderFunil(){
   const s=compute();
   document.getElementById('funilKpis').innerHTML=[{l:'Conexão',v:s.etapas[1],a:'--cyan'},{l:'Apresentação',v:s.etapas[2],a:'--cyan2'},{l:'Speech+Fechamento',v:s.etapas[3]+s.etapas[4],a:'--orange'},{l:'Referido',v:s.etapas[5],a:'--green'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
@@ -936,21 +999,12 @@ function renderFunil(){
   document.getElementById('funilFase').innerHTML=[['Aquisição (1-2)',s.fases.aquisicao,'var(--cyan)'],['Conversão (3-4)',s.fases.conversao,'var(--orange)'],['Expansão (5)',s.fases.expansao,'var(--green)']].map(([n,v,c])=>`<div class="fin-row"><span class="fin-lbl">${n}</span><span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${c}">${v}</span></div>`).join('');
 }
 
-// ══════════════════════════════════════════════════
-// VENDEDORES
-// ══════════════════════════════════════════════════
+// ══ VENDEDORES ══
 function renderVendedores(){
   const s=compute();
   const vends=Object.entries(s.vendedores).sort((a,b)=>b[1].vendas-a[1].vendas);
   const totR=vends.reduce((sum,[,d])=>sum+d.receita,0);
-
-  document.getElementById('vendKpis').innerHTML=[
-    {l:'Closers',v:vends.length,a:'--cyan'},
-    {l:'Top Closer',v:vends[0]?vends[0][0]:'—',a:'--green'},
-    {l:'Receita Total',v:'R$ '+fmt(totR),a:'--orange'}
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
-  // 🏆 Ranking Closers
+  document.getElementById('vendKpis').innerHTML=[{l:'Closers',v:vends.length,a:'--cyan'},{l:'Top Closer',v:vends[0]?vends[0][0]:'—',a:'--green'},{l:'Receita Total',v:'R$ '+fmt(totR),a:'--orange'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   const closerEl=document.getElementById('closerTbody');
   if(closerEl)closerEl.innerHTML=vends.length?vends.map(([nm,d],i)=>`<tr>
     <td style="color:var(--cyan);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td>
@@ -960,17 +1014,8 @@ function renderVendedores(){
     <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.vendas>0?'R$ '+fmt(d.receita/d.vendas):'—'}</td>
     <td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td>
   </tr>`).join(''):'<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Sem dados ainda</td></tr>';
-
-  // 🎯 Ranking BDR/SDR
   const bdrMap={};
-  leads.forEach(l=>{
-    const p=l.prospectador;
-    if(!p||p==='—'||p==='')return;
-    if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};
-    bdrMap[p].total++;
-    if(l.ordem>=2)bdrMap[p].emCall++;
-    if(l.status==='venda')bdrMap[p].geramVenda++;
-  });
+  leads.forEach(l=>{const p=l.prospectador;if(!p||p==='—'||p==='')return;if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};bdrMap[p].total++;if(l.ordem>=2)bdrMap[p].emCall++;if(l.status==='venda')bdrMap[p].geramVenda++;});
   const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].geramVenda-a[1].geramVenda);
   const bdrEl=document.getElementById('bdrTbody');
   if(bdrEl)bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr>
@@ -981,8 +1026,6 @@ function renderVendedores(){
     <td style="color:var(--green);font-weight:700">${d.geramVenda}</td>
     <td style="color:${d.emCall>0&&(d.geramVenda/d.emCall)>.2?'var(--green)':'var(--yellow)'}">${d.emCall>0?((d.geramVenda/d.emCall)*100).toFixed(0):0}%</td>
   </tr>`).join(''):'<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Preencha o campo BDR/SDR nos leads</td></tr>';
-
-  // Ranking completo
   document.getElementById('vendTbody').innerHTML=vends.map(([nm,d],i)=>`<tr>
     <td style="color:var(--cyan);font-weight:700;font-family:'Syne',sans-serif;font-size:15px">${i+1}</td>
     <td class="td-bold">${nm}</td><td>${d.leads}</td>
@@ -994,128 +1037,61 @@ function renderVendedores(){
   </tr>`).join('');
 }
 
-// ══════════════════════════════════════════════════
-// FINANCEIRO
-// ══════════════════════════════════════════════════
+// ══ FINANCEIRO ══
 function renderFinanceiro(){
   const s=compute();
   document.getElementById('finKpis').innerHTML=[{l:'Receita Bruta',v:'R$ '+fmt(s.receita),a:'--cyan'},{l:'Receita Líquida',v:'R$ '+fmt(s.liquido),a:'--cyan2'},{l:'Total Custos',v:'R$ '+fmt(s.totalCustos),a:'--orange'},{l:'Lucro Estimado',v:'R$ '+fmt(s.lucro),a:s.lucro>=0?'--green':'--red'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-  document.getElementById('dreTable').innerHTML=[
-    ['(+) Receita Bruta',s.receita,'pos'],
-    ['(-) Impostos / Deduções ~23%',s.receita*0.23,'neg'],
-    ['(=) Receita Líquida',s.liquido,'pos'],
-    ['(-) Custos Fixos Totais',s.totalCustos,'neg'],
-    ['(=) Resultado Operacional',s.lucro,s.lucro>=0?'pos':'neg'],
-    ['Margem Operacional',s.margemLiq+'%',+s.margemLiq>=20?'pos':'warn'],
-  ].map(([lb,vl,cls])=>`<div class="fin-row"><span class="fin-lbl">${lb}</span><span class="fin-val ${cls}">${typeof vl==='number'?'R$ '+fmt(vl):vl}</span></div>`).join('');
-
-  const catTotals={};
-  custos.forEach(c=>{catTotals[c.cat]=(catTotals[c.cat]||0)+Number(c.valor);});
+  document.getElementById('dreTable').innerHTML=[['(+) Receita Bruta',s.receita,'pos'],['(-) Impostos / Deduções ~23%',s.receita*0.23,'neg'],['(=) Receita Líquida',s.liquido,'pos'],['(-) Custos Fixos Totais',s.totalCustos,'neg'],['(=) Resultado Operacional',s.lucro,s.lucro>=0?'pos':'neg'],['Margem Operacional',s.margemLiq+'%',+s.margemLiq>=20?'pos':'warn']].map(([lb,vl,cls])=>`<div class="fin-row"><span class="fin-lbl">${lb}</span><span class="fin-val ${cls}">${typeof vl==='number'?'R$ '+fmt(vl):vl}</span></div>`).join('');
+  const catTotals={};custos.forEach(c=>{catTotals[c.cat]=(catTotals[c.cat]||0)+Number(c.valor);});
   document.getElementById('custosWrap').innerHTML=custos.map(c=>`
     <div class="custo-row">
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:2px">${c.nome}</div>
-        <span class="cat-badge" style="background:rgba(0,212,255,.08);color:${CATS[c.cat]||'var(--text2)'}">${c.cat}</span>
-      </div>
+      <div style="flex:1"><div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:2px">${c.nome}</div>
+      <span class="cat-badge" style="background:rgba(0,212,255,.08);color:${CATS[c.cat]||'var(--text2)'}">${c.cat}</span></div>
       <input class="fin-inp" style="width:100px" type="number" value="${c.valor}" onchange="updateCusto(${c.id},+this.value)">
       <button onclick="removeCusto(${c.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;opacity:.6;padding:0 4px">✕</button>
     </div>`).join('');
   document.getElementById('totalCustos').textContent='R$ '+fmt(s.totalCustos);
-
-  const recOrig={};
-  leads.filter(l=>l.status==='venda').forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
+  const recOrig={};leads.filter(l=>l.status==='venda').forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
   const maxRO=Math.max(...Object.values(recOrig),1);
-  document.getElementById('finOrigem').innerHTML=Object.keys(recOrig).length?
-    Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:'DM Mono',monospace">R$ ${fmt(v)}</span></div></div></div>`).join(''):
-    '<div style="color:var(--text2);font-size:12px;padding:8px 0">Nenhuma venda ainda</div>';
-
-  document.getElementById('finMargem').innerHTML=[
-    ['Ticket Médio',`R$ ${fmt(s.ticket)}`,'pos'],
-    ['Margem Bruta (est.)','77%','pos'],
-    ['Ponto de Equilíbrio',`R$ ${fmt(s.totalCustos/0.77)}`,'warn'],
-    ['Vendas p/ Breakeven',`${Math.ceil(s.totalCustos/0.77/(s.ticket||1))} vendas`,'warn'],
-    ['Receita p/ Meta',`R$ ${fmt(metas.receitaMes)}`,''],
-    ['Gap p/ Meta',`R$ ${fmt(Math.max(metas.receitaMes-s.receita,0))}`,s.receita>=metas.receitaMes?'pos':'neg'],
-  ].map(([lb,vl,cls])=>`<div class="fin-row"><span class="fin-lbl">${lb}</span><span class="fin-val ${cls}">${vl}</span></div>`).join('');
+  document.getElementById('finOrigem').innerHTML=Object.keys(recOrig).length?Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:'DM Mono',monospace">R$ ${fmt(v)}</span></div></div></div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:8px 0">Nenhuma venda ainda</div>';
+  document.getElementById('finMargem').innerHTML=[['Ticket Médio',`R$ ${fmt(s.ticket)}`,'pos'],['Margem Bruta (est.)','77%','pos'],['Ponto de Equilíbrio',`R$ ${fmt(s.totalCustos/0.77)}`,'warn'],['Vendas p/ Breakeven',`${Math.ceil(s.totalCustos/0.77/(s.ticket||1))} vendas`,'warn'],['Receita p/ Meta',`R$ ${fmt(metas.receitaMes)}`,''],['Gap p/ Meta',`R$ ${fmt(Math.max(metas.receitaMes-s.receita,0))}`,s.receita>=metas.receitaMes?'pos':'neg']].map(([lb,vl,cls])=>`<div class="fin-row"><span class="fin-lbl">${lb}</span><span class="fin-val ${cls}">${vl}</span></div>`).join('');
 }
 
 function updateCusto(id,val){custos=custos.map(c=>c.id===id?{...c,valor:val}:c);renderFinanceiro();renderPlano();showToast('✓ Custo atualizado');}
 function removeCusto(id){if(!confirm('Remover custo?'))return;custos=custos.filter(c=>c.id!==id);renderFinanceiro();showToast('Custo removido');}
 
-// ══════════════════════════════════════════════════
-// PROJEÇÃO
-// ══════════════════════════════════════════════════
+// ══ PROJEÇÃO ══
 function renderProjecao(){
   const s=compute();
   const projMes=s.receita+(s.ativos*s.ticket*0.18);
   document.getElementById('projKpis').innerHTML=[{l:'Receita Atual',v:'R$ '+fmt(s.receita),a:'--cyan'},{l:'Projeção Mês',v:'R$ '+fmt(projMes),a:'--orange'},{l:'Projeção 90 Dias',v:'R$ '+fmt(projMes*3),a:'--green'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   const pcts=[[metas.receitaMes,'Meta Receita','R$ '+fmt(s.receita),'receitaMes'],[metas.leadsNovos,'Meta Leads',s.total,'leadsNovos'],[metas.vendasMes,'Meta Vendas',s.vendas,'vendasMes']];
   document.getElementById('projMetas').innerHTML=pcts.map(([meta,lb,cur,field])=>{const pct=Math.min((cur/meta)*100,100);return`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;color:var(--text2)">${lb}</span><div style="display:flex;align-items:center;gap:6px"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text)">${typeof cur==='number'&&cur>1000?'R$ '+fmt(cur):cur} / </span><input class="fin-inp" style="width:80px" type="number" value="${meta}" onchange="metas['${field}']=+this.value;renderProjecao();renderPlano()"></div></div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'var(--yellow)':'var(--cyan)'}"></div></div><div style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-top:3px">${pct.toFixed(0)}% da meta</div></div>`;}).join('');
-  document.getElementById('projCenarios').innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${[['Conservador',.7,'var(--yellow)'],[' Realista',1,'var(--cyan)'],['Agressivo',1.4,'var(--green)']].map(([nm,m,c])=>`<div style="background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border-top:3px solid ${c}"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text2);margin-bottom:6px">${nm.toUpperCase()}</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${c}">R$ ${fmt(metas.receitaMes*m)}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">${Math.ceil(metas.vendasMes*m)} vendas/mês</div></div>`).join('')}</div>`;
+  document.getElementById('projCenarios').innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${[['Conservador',.7,'var(--yellow)'],['Realista',1,'var(--cyan)'],['Agressivo',1.4,'var(--green)']].map(([nm,m,c])=>`<div style="background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border-top:3px solid ${c}"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text2);margin-bottom:6px">${nm.toUpperCase()}</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${c}">R$ ${fmt(metas.receitaMes*m)}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">${Math.ceil(metas.vendasMes*m)} vendas/mês</div></div>`).join('')}</div>`;
 }
 
-// ══════════════════════════════════════════════════
-// PLANO DE AÇÃO — gerado automaticamente
-// ══════════════════════════════════════════════════
+// ══ PLANO DE AÇÃO ══
 function gerarPlano(){
-  const s=compute();
-  const acoes=[];
-
-  // Análise de quentes sem status
+  const s=compute();const acoes=[];
   const quentesSemStatus=leads.filter(l=>l.temp==='quente'&&l.status==='ativo');
-  if(quentesSemStatus.length>0){
-    acoes.push({id:'qa',cor:'var(--orange)',prioridade:'URGENTE',titulo:`Fechar ${quentesSemStatus.length} lead(s) quente(s) em aberto`,desc:`Você tem ${quentesSemStatus.length} lead(s) com temperatura quente ainda em andamento: ${quentesSemStatus.map(l=>l.nome).join(', ')}. Esses têm maior probabilidade de conversão imediata.`,checks:['Entrar em contato hoje','Enviar proposta personalizada','Definir prazo para decisão'],resultado:`Potencial de R$ ${fmt(quentesSemStatus.length*s.ticket)} em receita adicional caso convertidos.`,tag:'Comercial'});
-  }
-
-  // Leads sem temperatura
+  if(quentesSemStatus.length>0)acoes.push({id:'qa',cor:'var(--orange)',prioridade:'URGENTE',titulo:`Fechar ${quentesSemStatus.length} lead(s) quente(s) em aberto`,desc:`Você tem ${quentesSemStatus.length} lead(s) com temperatura quente ainda em andamento: ${quentesSemStatus.map(l=>l.nome).join(', ')}. Esses têm maior probabilidade de conversão imediata.`,checks:['Entrar em contato hoje','Enviar proposta personalizada','Definir prazo para decisão'],resultado:`Potencial de R$ ${fmt(quentesSemStatus.length*s.ticket)} em receita adicional caso convertidos.`,tag:'Comercial'});
   const semTemp=leads.filter(l=>!l.temp&&l.status==='ativo');
-  if(semTemp.length>0){
-    acoes.push({id:'st',cor:'var(--yellow)',prioridade:'ESTA SEMANA',titulo:`Qualificar ${semTemp.length} lead(s) sem temperatura`,desc:`${semTemp.length} leads ainda não foram qualificados com temperatura. Isso impede priorização correta do time comercial.`,checks:['Ligar para cada lead','Classificar como quente, morno ou frio','Atualizar no CRM'],resultado:`Pipeline organizado + foco no que converte.`,tag:'Operação'});
-  }
-
-  // Meta de receita
+  if(semTemp.length>0)acoes.push({id:'st',cor:'var(--yellow)',prioridade:'ESTA SEMANA',titulo:`Qualificar ${semTemp.length} lead(s) sem temperatura`,desc:`${semTemp.length} leads ainda não foram qualificados com temperatura.`,checks:['Ligar para cada lead','Classificar como quente, morno ou frio','Atualizar no CRM'],resultado:'Pipeline organizado + foco no que converte.',tag:'Operação'});
   const gapReceita=Math.max(metas.receitaMes-s.receita,0);
-  if(gapReceita>0){
-    const vendasNecessarias=Math.ceil(gapReceita/(s.ticket||1));
-    acoes.push({id:'mr',cor:'var(--cyan)',prioridade:'ESTE MÊS',titulo:`Fechar ${vendasNecessarias} venda(s) para bater a meta`,desc:`Meta de receita: R$ ${fmt(metas.receitaMes)}. Receita atual: R$ ${fmt(s.receita)}. Gap: R$ ${fmt(gapReceita)}. Com ticket médio de R$ ${fmt(s.ticket)}, você precisa de ${vendasNecessarias} venda(s) para fechar o mês.`,checks:['Identificar leads em Fechamento (etapa 4)','Ativar estratégia de referidos','Acelerar follow-ups nos leads mornos'],resultado:`Atingir R$ ${fmt(metas.receitaMes)} de receita no mês.`,tag:'Financeiro'});
-  }
-
-  // Leads em etapa 4 sem venda
+  if(gapReceita>0){const vendasNecessarias=Math.ceil(gapReceita/(s.ticket||1));acoes.push({id:'mr',cor:'var(--cyan)',prioridade:'ESTE MÊS',titulo:`Fechar ${vendasNecessarias} venda(s) para bater a meta`,desc:`Meta: R$ ${fmt(metas.receitaMes)}. Atual: R$ ${fmt(s.receita)}. Gap: R$ ${fmt(gapReceita)}.`,checks:['Identificar leads em Fechamento (etapa 4)','Ativar estratégia de referidos','Acelerar follow-ups nos leads mornos'],resultado:`Atingir R$ ${fmt(metas.receitaMes)} de receita no mês.`,tag:'Financeiro'});}
   const etapa4=leads.filter(l=>l.ordem===4&&l.status==='ativo');
-  if(etapa4.length>0){
-    acoes.push({id:'e4',cor:'var(--green)',prioridade:'ESTE MÊS',titulo:`Converter ${etapa4.length} lead(s) em Fechamento`,desc:`Você tem ${etapa4.length} lead(s) já na etapa de Fechamento. São os mais próximos de virar venda.`,checks:['Revisar proposta de cada um','Aplicar script de fechamento','Usar gatilho de urgência ou bônus'],resultado:`Potencial de R$ ${fmt(etapa4.length*s.ticket)} em receita imediata.`,tag:'Comercial'});
-  }
-
-  // Custo alto vs receita
-  if(s.totalCustos>0&&s.liquido>0&&(s.totalCustos/s.liquido)>0.7){
-    acoes.push({id:'cu',cor:'var(--red)',prioridade:'URGENTE',titulo:'Custos fixos acima de 70% da receita líquida',desc:`Seus custos fixos (R$ ${fmt(s.totalCustos)}) representam ${((s.totalCustos/s.liquido)*100).toFixed(0)}% da receita líquida. Isso comprime a margem de forma crítica.`,checks:['Revisar cada linha de custo','Identificar o que pode ser cortado ou renegociado','Aumentar receita antes de expandir custos'],resultado:`Margem operacional saudável acima de 30%.`,tag:'Financeiro'});
-  }
-
-  // Sem clientes em expansão
-  if(s.etapas[5]===0){
-    acoes.push({id:'ref',cor:'var(--purple)',prioridade:'PRÓXIMA SEMANA',titulo:'Ativar estratégia de referidos',desc:`Nenhum lead está na etapa Referido atualmente. A estratégia de expansão via referidos tem o menor CAC e maior taxa de fechamento.`,checks:['Pedir indicações a clientes satisfeitos','Criar incentivo para quem indicar','Mapear clientes mais engajados'],resultado:`Novos leads com custo zero de aquisição.`,tag:'Crescimento'});
-  }
-
-  if(acoes.length===0){
-    acoes.push({id:'ok',cor:'var(--green)',prioridade:'',titulo:'Operação saudável!',desc:'Com base nos dados atuais, não há alertas críticos. Continue executando o plano e acompanhando os indicadores semanalmente.',checks:['Manter ritmo de follow-up','Atualizar CRM após cada contato'],resultado:'Consistência = resultado previsível.',tag:'Operação'});
-  }
-
+  if(etapa4.length>0)acoes.push({id:'e4',cor:'var(--green)',prioridade:'ESTE MÊS',titulo:`Converter ${etapa4.length} lead(s) em Fechamento`,desc:`Você tem ${etapa4.length} lead(s) já na etapa de Fechamento.`,checks:['Revisar proposta de cada um','Aplicar script de fechamento','Usar gatilho de urgência ou bônus'],resultado:`Potencial de R$ ${fmt(etapa4.length*s.ticket)} em receita imediata.`,tag:'Comercial'});
+  if(s.totalCustos>0&&s.liquido>0&&(s.totalCustos/s.liquido)>0.7)acoes.push({id:'cu',cor:'var(--red)',prioridade:'URGENTE',titulo:'Custos fixos acima de 70% da receita líquida',desc:`Seus custos fixos (R$ ${fmt(s.totalCustos)}) representam ${((s.totalCustos/s.liquido)*100).toFixed(0)}% da receita líquida.`,checks:['Revisar cada linha de custo','Identificar o que pode ser cortado ou renegociado','Aumentar receita antes de expandir custos'],resultado:'Margem operacional saudável acima de 30%.',tag:'Financeiro'});
+  if(s.etapas[5]===0)acoes.push({id:'ref',cor:'var(--purple)',prioridade:'PRÓXIMA SEMANA',titulo:'Ativar estratégia de referidos',desc:'Nenhum lead está na etapa Referido atualmente.',checks:['Pedir indicações a clientes satisfeitos','Criar incentivo para quem indicar','Mapear clientes mais engajados'],resultado:'Novos leads com custo zero de aquisição.',tag:'Crescimento'});
+  if(acoes.length===0)acoes.push({id:'ok',cor:'var(--green)',prioridade:'',titulo:'Operação saudável!',desc:'Com base nos dados atuais, não há alertas críticos.',checks:['Manter ritmo de follow-up','Atualizar CRM após cada contato'],resultado:'Consistência = resultado previsível.',tag:'Operação'});
   const concluidas=acoes.filter(a=>(planoChecks[a.id]||[]).length>=a.checks.length&&a.checks.length>0).length;
-  document.getElementById('planoKpis').innerHTML=[
-    {l:'Ações Identificadas',v:acoes.length,a:'--cyan'},
-    {l:'Concluídas',v:concluidas,a:'--green'},
-    {l:'Pendentes',v:acoes.length-concluidas,a:'--orange'},
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
+  document.getElementById('planoKpis').innerHTML=[{l:'Ações Identificadas',v:acoes.length,a:'--cyan'},{l:'Concluídas',v:concluidas,a:'--green'},{l:'Pendentes',v:acoes.length-concluidas,a:'--orange'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   document.getElementById('planoItems').innerHTML=acoes.map(a=>{
     if(!planoChecks[a.id])planoChecks[a.id]=[];
     return`<div class="pa-card" style="--accent:${a.cor}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">
         <div class="pa-title">${a.titulo}</div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          ${a.prioridade?`<span class="pa-tag ${a.prioridade==='URGENTE'?'red':a.prioridade==='ESTA SEMANA'?'warn':a.prioridade==='ESTE MÊS'?'green':''}">${a.prioridade}</span>`:''}
-          <span class="pa-tag">${a.tag}</span>
-        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">${a.prioridade?`<span class="pa-tag ${a.prioridade==='URGENTE'?'red':a.prioridade==='ESTA SEMANA'?'warn':a.prioridade==='ESTE MÊS'?'green':''}">${a.prioridade}</span>`:''}<span class="pa-tag">${a.tag}</span></div>
       </div>
       <div class="pa-desc">${a.desc}</div>
       <div style="margin-bottom:8px">${a.checks.map((ch,ci)=>`
@@ -1133,41 +1109,25 @@ function toggleCheck(aid,ci,checked){
   if(!planoChecks[aid])planoChecks[aid]=[];
   if(checked){if(!planoChecks[aid].includes(ci))planoChecks[aid].push(ci);}
   else{planoChecks[aid]=planoChecks[aid].filter(x=>x!==ci);}
-  showToast(checked?'✓ Ação marcada como concluída':'Ação desmarcada');
-  renderPlano();
+  showToast(checked?'✓ Ação marcada como concluída':'Ação desmarcada');renderPlano();
 }
 const renderPlano=gerarPlano;
 
-// ══════════════════════════════════════════════════
-// CLIENTES ATIVOS
-// ══════════════════════════════════════════════════
+// ══ CLIENTES ATIVOS ══
 function renderClientes(){
   const q=(document.getElementById('srchCl').value||'').toLowerCase();
   const lista=clientesAtivos.filter(c=>!q||c.nome.toLowerCase().includes(q));
-  const total24=lista.length*24;
   const entregues=clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0);
   const pend=clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0);
-  document.getElementById('clKpis').innerHTML=[
-    {l:'Clientes Ativos',v:clientesAtivos.length,a:'--cyan'},
-    {l:'Reuniões Entregues',v:entregues,a:'--green'},
-    {l:'Reuniões Pendentes',v:pend,a:'--orange'},
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
+  document.getElementById('clKpis').innerHTML=[{l:'Clientes Ativos',v:clientesAtivos.length,a:'--cyan'},{l:'Reuniões Entregues',v:entregues,a:'--green'},{l:'Reuniões Pendentes',v:pend,a:'--orange'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   if(!lista.length){document.getElementById('clientesWrap').innerHTML='<div style="color:var(--text2);font-size:13px;padding:20px 0">Nenhum cliente ativo cadastrado ainda.</div>';return;}
   document.getElementById('clientesWrap').innerHTML=lista.map(c=>{
     const done=c.reunioes.filter(r=>r.status==='entregue').length;
     const pct=Math.round((done/24)*100);
     return`<div class="cl-card">
       <div class="cl-head" onclick="toggleCliente(${c.id})">
-        <div>
-          <div class="cl-nome">${c.nome}</div>
-          <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px">${c.resp} · ${c.produto} · desde ${c.inicio||'—'}</div>
-        </div>
-        <div class="cl-prog">
-          <div class="cl-prog-text">${done}/24 reuniões</div>
-          <div class="cl-prog-bar"><div class="cl-prog-fill" style="width:${pct}%"></div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cyan)">${pct}%</div>
-        </div>
+        <div><div class="cl-nome">${c.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px">${c.resp} · ${c.produto} · desde ${c.inicio||'—'}</div></div>
+        <div class="cl-prog"><div class="cl-prog-text">${done}/24 reuniões</div><div class="cl-prog-bar"><div class="cl-prog-fill" style="width:${pct}%"></div></div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cyan)">${pct}%</div></div>
       </div>
       <div class="cl-body" id="clb-${c.id}">
         ${REUNIOES_PADRAO.map(fase=>`
@@ -1180,21 +1140,19 @@ function renderClientes(){
                 return`<div class="reuniao-item ${cls}">
                   <div class="reuniao-num">REUNIÃO ${r.n} · ${r.resp}</div>
                   <div class="reuniao-titulo">${r.t}</div>
-                  <div class="reuniao-status">
-                    <select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
-                      <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
-                      <option value="agendado"${rd.status==='agendado'?' selected':''}>📅 Agendada</option>
-                      <option value="entregue"${rd.status==='entregue'?' selected':''}>✅ Entregue</option>
-                      <option value="perdida"${rd.status==='perdida'?' selected':''}>❌ Não realizada</option>
-                    </select>
-                  </div>
+                  <div class="reuniao-status"><select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
+                    <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
+                    <option value="agendado"${rd.status==='agendado'?' selected':''}>📅 Agendada</option>
+                    <option value="entregue"${rd.status==='entregue'?' selected':''}>✅ Entregue</option>
+                    <option value="perdida"${rd.status==='perdida'?' selected':''}>❌ Não realizada</option>
+                  </select></div>
                 </div>`;
               }).join('')}
             </div>
           </div>`).join('')}
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
           <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text3);margin-bottom:6px">OBSERVAÇÕES GERAIS</div>
-          <textarea class="cl-obs-area" placeholder="Anotações sobre o cliente, riscos, oportunidades..." onchange="updateClienteObs(${c.id},this.value)">${c.obs||''}</textarea>
+          <textarea class="cl-obs-area" placeholder="Anotações sobre o cliente..." onchange="updateClienteObs(${c.id},this.value)">${c.obs||''}</textarea>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="relatorioCliente(${c.id})">📄 Relatório</button>
@@ -1213,16 +1171,11 @@ function relatorioCliente(id){
   const c=clientesAtivos.find(x=>x.id===id);if(!c)return;
   const done=c.reunioes.filter(r=>r.status==='entregue');
   const pend=c.reunioes.filter(r=>r.status==='pendente');
-  const txt=`RELATÓRIO — ${c.nome}\nResponsável: ${c.resp} | Produto: ${c.produto}\nInício: ${c.inicio}\n\nPROGRESSO: ${done.length}/24 reuniões entregues (${Math.round((done.length/24)*100)}%)\n\nREUNIÕES ENTREGUES:\n${done.map(r=>`  [${r.n}] ${REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===r.n)?.t||'—'}\n     Entregável: ${r.entregavel||'—'}`).join('\n')}\n\nPENDENTES: ${pend.length} reuniões\n\nOBSERVAÇÕES:\n${c.obs||'—'}`;
-  const a=document.createElement('a');
-  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
-  a.download=`relatorio_${c.nome.replace(/\s+/g,'_')}.txt`;
-  a.click();showToast('📄 Relatório exportado!');
+  const txt=`RELATÓRIO — ${c.nome}\nResponsável: ${c.resp} | Produto: ${c.produto}\nInício: ${c.inicio}\n\nPROGRESSO: ${done.length}/24 reuniões entregues (${Math.round((done.length/24)*100)}%)\n\nREUNIÕES ENTREGUES:\n${done.map(r=>`  [${r.n}] ${REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===r.n)?.t||'—'}`).join('\n')}\n\nPENDENTES: ${pend.length} reuniões\n\nOBSERVAÇÕES:\n${c.obs||'—'}`;
+  const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download=`relatorio_${c.nome.replace(/\s+/g,'_')}.txt`;a.click();showToast('📄 Relatório exportado!');
 }
 
-// ══════════════════════════════════════════════════
-// MODAIS
-// ══════════════════════════════════════════════════
+// ══ MODAIS ══
 function openModal(type){document.getElementById('modal'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('open');}
 function closeModal(type){document.getElementById('modal'+type.charAt(0).toUpperCase()+type.slice(1)).classList.remove('open');}
 
@@ -1230,9 +1183,7 @@ function saveLead(){
   const nome=document.getElementById('ml-nome').value.trim();
   if(!nome){alert('Nome obrigatório');return;}
   const lead={id:nextId++,nome,tel:document.getElementById('ml-tel').value,origem:document.getElementById('ml-origem').value,vendedor:document.getElementById('ml-vend').value,prospectador:document.getElementById('ml-prosp').value,produto:document.getElementById('ml-prod').value,ordem:+document.getElementById('ml-etapa').value,status:document.getElementById('ml-status').value,temp:document.getElementById('ml-temp').value,receita:+document.getElementById('ml-val').value||0,conexao:document.getElementById('ml-data').value||new Date().toLocaleDateString('pt-BR'),obs:document.getElementById('ml-obs').value};
-  leads.push(lead);
-  saveLeadToDB(lead);
-  closeModal('lead');
+  leads.push(lead);saveLeadToDB(lead);closeModal('lead');
   document.getElementById('ml-nome').value='';document.getElementById('ml-val').value='';document.getElementById('ml-obs').value='';
   showToast('✓ Lead adicionado!');renderAll();
 }
@@ -1242,8 +1193,7 @@ function saveCusto(){
   const val=+document.getElementById('mc-val').value;
   const cat=document.getElementById('mc-cat').value;
   if(!nome||!val){alert('Preencha nome e valor');return;}
-  custos.push({id:nextCId++,nome,cat,valor:val});
-  closeModal('custo');
+  custos.push({id:nextCId++,nome,cat,valor:val});closeModal('custo');
   document.getElementById('mc-nome').value='';document.getElementById('mc-val').value='';
   showToast('✓ Custo adicionado!');renderFinanceiro();renderPlano();
 }
@@ -1251,22 +1201,12 @@ function saveCusto(){
 function saveCliente(){
   const nome=document.getElementById('mca-nome').value.trim();
   if(!nome){alert('Nome obrigatório');return;}
-  clientesAtivos.push({
-    id:nextCaId++,nome,
-    resp:document.getElementById('mca-resp').value,
-    produto:document.getElementById('mca-prod').value,
-    inicio:document.getElementById('mca-inicio').value,
-    obs:document.getElementById('mca-obs').value,
-    reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))
-  });
-  closeModal('cliente');
-  document.getElementById('mca-nome').value='';document.getElementById('mca-obs').value='';
+  clientesAtivos.push({id:nextCaId++,nome,resp:document.getElementById('mca-resp').value,produto:document.getElementById('mca-prod').value,inicio:document.getElementById('mca-inicio').value,obs:document.getElementById('mca-obs').value,reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))});
+  closeModal('cliente');document.getElementById('mca-nome').value='';document.getElementById('mca-obs').value='';
   showToast('✓ Cliente ativo adicionado!');renderClientes();
 }
 
-// ══════════════════════════════════════════════════
-// EXPORT / UTILS
-// ══════════════════════════════════════════════════
+// ══ EXPORT ══
 function exportCSV(){
   const h=['ID','Nome','Telefone','Origem','Vendedor','Produto','Etapa','Status','Temperatura','Receita','Conexão'];
   const rows=leads.map(l=>[l.id,l.nome,l.tel,l.origem,l.vendedor,l.produto,EN[l.ordem]||l.ordem,l.status,l.temp,l.receita,l.conexao]);
@@ -1276,19 +1216,18 @@ function exportCSV(){
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-// ══════════════════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════════════════
-const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Kanban — Pipeline Visual',leads:'Leads & Pipeline',funil:'Funil Comercial',vendedores:'Vendedores',financeiro:'Dashboard Financeiro',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
+// ══ NAVIGATION ══
+const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Kanban — Pipeline Visual',leads:'Leads & Pipeline',funil:'Funil Comercial',vendedores:'Vendedores',diagnosticos:'Leads · Diagnóstico',financeiro:'Dashboard Financeiro',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
 function nav(name,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  const view = document.getElementById('view-'+name);
-  if (view) view.classList.add('active');
+  const view=document.getElementById('view-'+name);
+  if(view)view.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('pageTitle').textContent=viewTitles[name]||name;
   if(name==='performance')renderPerformance();
   if(name==='empresas_admin')renderEmpresasAdmin();
+  if(name==='diagnosticos')carregarDiagnosticos();
   if(name==='dashboard'){renderDashboard();}
   else renderAll();
 }
@@ -1298,68 +1237,65 @@ function renderAll(){
   renderVendedores();renderFinanceiro();renderProjecao();gerarPlano();renderClientes();
 }
 
-// ── FILTRO DE DATA GLOBAL ──────────────────────────────────
-let leadsFiltrados = [];
+// ══ FILTRO DE DATA ══
+let leadsFiltrados=[];
 
 function getFiltroRange(){
-  const p = document.getElementById('filter-periodo')?.value || 'todos';
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  let de = null, ate = null;
-  if(p === 'hoje'){ de = new Date(hoje); ate = new Date(hoje); ate.setHours(23,59,59,999); }
-  else if(p === 'semana'){ de = new Date(hoje); de.setDate(hoje.getDate()-hoje.getDay()); ate = new Date(de); ate.setDate(de.getDate()+6); ate.setHours(23,59,59,999); }
-  else if(p === 'mes'){ de = new Date(hoje.getFullYear(), hoje.getMonth(), 1); ate = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0, 23, 59, 59, 999); }
-  else if(p === 'mes_passado'){ de = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1); ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 23, 59, 59, 999); }
-  else if(p === 'personalizado'){
-    const dv = document.getElementById('filter-de')?.value;
-    const av = document.getElementById('filter-ate')?.value;
-    if(dv) de = new Date(dv+'T00:00:00');
-    if(av) { ate = new Date(av+'T23:59:59'); }
+  const p=document.getElementById('filter-periodo')?.value||'todos';
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  let de=null,ate=null;
+  if(p==='hoje'){de=new Date(hoje);ate=new Date(hoje);ate.setHours(23,59,59,999);}
+  else if(p==='semana'){de=new Date(hoje);de.setDate(hoje.getDate()-hoje.getDay());ate=new Date(de);ate.setDate(de.getDate()+6);ate.setHours(23,59,59,999);}
+  else if(p==='mes'){de=new Date(hoje.getFullYear(),hoje.getMonth(),1);ate=new Date(hoje.getFullYear(),hoje.getMonth()+1,0,23,59,59,999);}
+  else if(p==='mes_passado'){de=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);ate=new Date(hoje.getFullYear(),hoje.getMonth(),0,23,59,59,999);}
+  else if(p==='personalizado'){
+    const dv=document.getElementById('filter-de')?.value;
+    const av=document.getElementById('filter-ate')?.value;
+    if(dv)de=new Date(dv+'T00:00:00');
+    if(av){ate=new Date(av+'T23:59:59');}
   }
-  return { de, ate };
+  return{de,ate};
 }
 
 function aplicarFiltro(){
-  const p = document.getElementById('filter-periodo')?.value;
-  const deEl = document.getElementById('filter-de');
-  const ateEl = document.getElementById('filter-ate');
-  if(deEl) deEl.style.display = p === 'personalizado' ? 'block' : 'none';
-  if(ateEl) ateEl.style.display = p === 'personalizado' ? 'block' : 'none';
-
-  const { de, ate } = getFiltroRange();
-  if(de && ate){
-    leadsFiltrados = leads.filter(l => {
-      if(!l.conexao) return false;
-      const d = new Date(l.conexao.includes('/') ? l.conexao.split('/').reverse().join('-') : l.conexao);
-      return d >= de && d <= ate;
+  const p=document.getElementById('filter-periodo')?.value;
+  const deEl=document.getElementById('filter-de');
+  const ateEl=document.getElementById('filter-ate');
+  if(deEl)deEl.style.display=p==='personalizado'?'block':'none';
+  if(ateEl)ateEl.style.display=p==='personalizado'?'block':'none';
+  const{de,ate}=getFiltroRange();
+  if(de&&ate){
+    leadsFiltrados=leads.filter(l=>{
+      if(!l.conexao)return false;
+      const d=new Date(l.conexao.includes('/')?l.conexao.split('/').reverse().join('-'):l.conexao);
+      return d>=de&&d<=ate;
     });
   } else {
-    leadsFiltrados = [...leads];
+    leadsFiltrados=[...leads];
   }
   renderAll();
-  if(document.getElementById('view-dashboard')?.classList.contains('active')) renderDashboard();
+  if(document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
 }
 
-function getLeadsAtivos(){ return leadsFiltrados.length > 0 || document.getElementById('filter-periodo')?.value !== 'todos' ? leadsFiltrados : leads; }
+function getLeadsAtivos(){return leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;}
 
-// ── DASHBOARD POR ÁREA ─────────────────────────────────────
-function switchDashTab(area, el){
-  document.querySelectorAll('.dash-tab').forEach(t=>{ t.style.borderBottomColor='transparent'; t.style.color='var(--text2)'; });
+// ══ DASHBOARD ══
+function switchDashTab(area,el){
+  document.querySelectorAll('.dash-tab').forEach(t=>{t.style.borderBottomColor='transparent';t.style.color='var(--text2)';});
   document.querySelectorAll('.dash-panel').forEach(p=>p.style.display='none');
-  el.style.borderBottomColor='var(--cyan)'; el.style.color='var(--cyan)';
+  el.style.borderBottomColor='var(--cyan)';el.style.color='var(--cyan)';
   document.getElementById('dash-'+area).style.display='block';
   renderDashArea(area);
 }
 
-async function renderDashboard(){
-  renderDashArea('comercial');
-}
+async function renderDashboard(){renderDashArea('comercial');}
 
 function renderDashArea(area){
-  const ls = getLeadsAtivos();
-  if(area === 'comercial') renderDashComercial(ls);
-  else if(area === 'financeiro_dash') renderDashFinanceiro(ls);
-  else if(area === 'operacional_dash') renderDashOperacional();
-  else if(area === 'rh_dash') renderDashRH();
+  const ls=getLeadsAtivos();
+  if(area==='comercial')renderDashComercial(ls);
+  else if(area==='financeiro_dash')renderDashFinanceiro(ls);
+  else if(area==='operacional_dash')renderDashOperacional();
+  else if(area==='rh_dash')renderDashRH();
 }
 
 function renderDashComercial(ls){
@@ -1367,65 +1303,34 @@ function renderDashComercial(ls){
   const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
   const txConv=ls.length>0?((vendas.length/ls.length)*100).toFixed(1):0;
   const ticket=vendas.length>0?(receita/vendas.length):0;
-
-  const kpis = document.getElementById('dash-com-kpis');
-  if(kpis) kpis.innerHTML=[
-    {l:'Total Leads',v:ls.length,sub:`${ls.filter(l=>l.status==='ativo').length} ativos`,a:'--cyan'},
-    {l:'Vendas',v:vendas.length,sub:`${ls.filter(l=>l.status==='perdido').length} perdidos`,a:'--green'},
-    {l:'Receita',v:'R$ '+fmt(receita),sub:`ticket R$ ${fmt(ticket)}`,a:'--orange'},
-    {l:'Conversão',v:txConv+'%',sub:'no período',a:'--yellow'},
-  ].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
-
-  // Funil
-  const etapas={1:0,2:0,3:0,4:0,5:0};
-  ls.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
+  const kpis=document.getElementById('dash-com-kpis');
+  if(kpis)kpis.innerHTML=[{l:'Total Leads',v:ls.length,sub:`${ls.filter(l=>l.status==='ativo').length} ativos`,a:'--cyan'},{l:'Vendas',v:vendas.length,sub:`${ls.filter(l=>l.status==='perdido').length} perdidos`,a:'--green'},{l:'Receita',v:'R$ '+fmt(receita),sub:`ticket R$ ${fmt(ticket)}`,a:'--orange'},{l:'Conversão',v:txConv+'%',sub:'no período',a:'--yellow'}].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+  const etapas={1:0,2:0,3:0,4:0,5:0};ls.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
   const maxE=Math.max(...Object.values(etapas),1);
   const funilEl=document.getElementById('dash-com-funil');
-  if(funilEl) funilEl.innerHTML=Object.entries(etapas).map(([k,v])=>`<div class="fn-row"><div class="fn-lbl">${EN[k]}</div><div class="fn-track"><div class="fn-bar" style="width:${v>0?Math.max((v/maxE)*100,5):0}%;background:${EC[k]}"><span>${v>0?v:''}</span></div></div><div class="fn-n">${v}</div></div>`).join('');
-
-  // Temperatura
-  const temps={quente:0,morno:0,frio:0};
-  ls.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
+  if(funilEl)funilEl.innerHTML=Object.entries(etapas).map(([k,v])=>`<div class="fn-row"><div class="fn-lbl">${EN[k]}</div><div class="fn-track"><div class="fn-bar" style="width:${v>0?Math.max((v/maxE)*100,5):0}%;background:${EC[k]}"><span>${v>0?v:''}</span></div></div><div class="fn-n">${v}</div></div>`).join('');
+  const temps={quente:0,morno:0,frio:0};ls.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
   const tempEl=document.getElementById('dash-com-temp');
-  if(tempEl) tempEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[['🔥','Quente',temps.quente||0,'var(--orange)'],['🌡️','Morno',temps.morno||0,'var(--yellow)'],['❄️','Frio',temps.frio||0,'#4A90E2']].map(([ic,lb,vl,cl])=>`<div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center"><div style="font-size:16px">${ic}</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${cl}">${vl}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text2)">${lb}</div></div>`).join('')}</div>`;
-
-  // Origem
+  if(tempEl)tempEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[['🔥','Quente',temps.quente||0,'var(--orange)'],['🌡️','Morno',temps.morno||0,'var(--yellow)'],['❄️','Frio',temps.frio||0,'#4A90E2']].map(([ic,lb,vl,cl])=>`<div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center"><div style="font-size:16px">${ic}</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:${cl}">${vl}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text2)">${lb}</div></div>`).join('')}</div>`;
   const origens={};ls.forEach(l=>{origens[l.origem]=(origens[l.origem]||0)+1;});
   const maxO=Math.max(...Object.values(origens),1);
   const origEl=document.getElementById('dash-com-origem');
-  if(origEl) origEl.innerHTML=Object.entries(origens).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text2)">${k}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:55px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--cyan);width:${(v/maxO)*100}%;border-radius:2px"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:26px;text-align:right">${ls.length>0?((v/ls.length)*100).toFixed(0):0}%</span></div></div>`).join('');
-
-  // Ranking Closers com foto
-  const closerMap={};
-  ls.forEach(l=>{
-    const v=l.vendedor||'—';
-    if(!closerMap[v])closerMap[v]={leads:0,vendas:0,receita:0,foto:''};
-    closerMap[v].leads++;
-    if(l.status==='venda'){closerMap[v].vendas++;closerMap[v].receita+=Number(l.receita);}
-  });
+  if(origEl)origEl.innerHTML=Object.entries(origens).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text2)">${k}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:55px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--cyan);width:${(v/maxO)*100}%;border-radius:2px"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);width:26px;text-align:right">${ls.length>0?((v/ls.length)*100).toFixed(0):0}%</span></div></div>`).join('');
+  const closerMap={};ls.forEach(l=>{const v=l.vendedor||'—';if(!closerMap[v])closerMap[v]={leads:0,vendas:0,receita:0};closerMap[v].leads++;if(l.status==='venda'){closerMap[v].vendas++;closerMap[v].receita+=Number(l.receita);}});
   const closers=Object.entries(closerMap).sort((a,b)=>b[1].vendas-a[1].vendas);
   const closerEl=document.getElementById('dash-closer-tbody');
-  if(closerEl) closerEl.innerHTML=closers.length?closers.map(([nm,d],i)=>`<tr>
+  if(closerEl)closerEl.innerHTML=closers.length?closers.map(([nm,d],i)=>`<tr>
     <td style="padding:8px 10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td>
-    <td class="td-bold">${nm}</td>
-    <td style="color:var(--green);font-weight:700">${d.vendas}</td>
+    <td class="td-bold">${nm}</td><td style="color:var(--green);font-weight:700">${d.vendas}</td>
     <td style="font-family:'DM Mono',monospace;color:var(--cyan)">${d.receita>0?'R$ '+fmt(d.receita):'—'}</td>
     <td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--green)':'var(--yellow)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td>
   </tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Sem dados no período</td></tr>';
-
-  // Ranking BDR/SDR com foto
-  const bdrMap={};
-  ls.forEach(l=>{
-    const p=l.prospectador;if(!p||p==='')return;
-    if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};
-    bdrMap[p].total++;if(l.ordem>=2)bdrMap[p].emCall++;if(l.status==='venda')bdrMap[p].geramVenda++;
-  });
+  const bdrMap={};ls.forEach(l=>{const p=l.prospectador;if(!p||p==='')return;if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};bdrMap[p].total++;if(l.ordem>=2)bdrMap[p].emCall++;if(l.status==='venda')bdrMap[p].geramVenda++;});
   const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].geramVenda-a[1].geramVenda);
   const bdrEl=document.getElementById('dash-bdr-tbody');
-  if(bdrEl) bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr>
+  if(bdrEl)bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr>
     <td style="padding:8px 10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--yellow));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td>
-    <td class="td-bold">${nm}</td>
-    <td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.total}</td>
+    <td class="td-bold">${nm}</td><td style="font-family:'DM Mono',monospace;color:var(--text2)">${d.total}</td>
     <td style="font-family:'DM Mono',monospace;color:var(--cyan)">${d.emCall}</td>
     <td style="color:var(--green);font-weight:700">${d.geramVenda}</td>
   </tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:12px">Preencha o campo BDR/SDR nos leads</td></tr>';
@@ -1435,161 +1340,65 @@ function renderDashFinanceiro(ls){
   const vendas=ls.filter(l=>l.status==='venda');
   const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
   const totalCustos=custos.reduce((s,c)=>s+Number(c.valor),0);
-  const tax=0.23; const liquido=receita*(1-tax); const lucro=liquido-totalCustos;
+  const tax=0.23;const liquido=receita*(1-tax);const lucro=liquido-totalCustos;
   const margem=liquido>0?((lucro/liquido)*100).toFixed(1):0;
-
   const kpis=document.getElementById('dash-fin-kpis');
-  if(kpis) kpis.innerHTML=[
-    {l:'Receita Bruta',v:'R$ '+fmt(receita),a:'--cyan'},
-    {l:'Receita Líquida',v:'R$ '+fmt(liquido),a:'--cyan2'},
-    {l:'Total Custos',v:'R$ '+fmt(totalCustos),a:'--orange'},
-    {l:'Resultado',v:'R$ '+fmt(lucro),a:lucro>=0?'--green':'--red'},
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
+  if(kpis)kpis.innerHTML=[{l:'Receita Bruta',v:'R$ '+fmt(receita),a:'--cyan'},{l:'Receita Líquida',v:'R$ '+fmt(liquido),a:'--cyan2'},{l:'Total Custos',v:'R$ '+fmt(totalCustos),a:'--orange'},{l:'Resultado',v:'R$ '+fmt(lucro),a:lucro>=0?'--green':'--red'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   const dreEl=document.getElementById('dash-fin-dre');
-  if(dreEl) dreEl.innerHTML=[
-    ['(+) Receita Bruta',receita,'pos'],
-    ['(-) Impostos ~23%',receita*tax,'neg'],
-    ['(=) Receita Líquida',liquido,'pos'],
-    ['(-) Custos Fixos',totalCustos,'neg'],
-    ['(=) Resultado',lucro,lucro>=0?'pos':'neg'],
-    ['Margem',margem+'%',+margem>=20?'pos':'warn'],
-  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${typeof v==='number'?'R$ '+fmt(v):v}</span></div>`).join('');
-
-  const recOrig={};
-  vendas.forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
+  if(dreEl)dreEl.innerHTML=[['(+) Receita Bruta',receita,'pos'],['(-) Impostos ~23%',receita*tax,'neg'],['(=) Receita Líquida',liquido,'pos'],['(-) Custos Fixos',totalCustos,'neg'],['(=) Resultado',lucro,lucro>=0?'pos':'neg'],['Margem',margem+'%',+margem>=20?'pos':'warn']].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${typeof v==='number'?'R$ '+fmt(v):v}</span></div>`).join('');
+  const recOrig={};vendas.forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
   const maxRO=Math.max(...Object.values(recOrig),1);
   const origEl=document.getElementById('dash-fin-origem');
-  if(origEl) origEl.innerHTML=Object.keys(recOrig).length?
-    Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:'DM Mono',monospace">R$ ${fmt(v)}</span></div></div></div>`).join(''):
-    '<div style="color:var(--text2);font-size:12px;padding:8px 0">Nenhuma venda no período</div>';
-
-  const margemEl=document.getElementById('dash-fin-margem');
+  if(origEl)origEl.innerHTML=Object.keys(recOrig).length?Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:'DM Mono',monospace">R$ ${fmt(v)}</span></div></div></div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:8px 0">Nenhuma venda no período</div>';
   const ticket=vendas.length>0?receita/vendas.length:0;
-  if(margemEl) margemEl.innerHTML=[
-    ['Ticket Médio',`R$ ${fmt(ticket)}`,'pos'],
-    ['Margem Bruta','77%','pos'],
-    ['Ponto de Equilíbrio',`R$ ${fmt(totalCustos/0.77)}`,'warn'],
-    ['Vendas p/ Breakeven',`${Math.ceil(totalCustos/0.77/(ticket||1))} vendas`,'warn'],
-    ['Margem Operacional',margem+'%',+margem>=20?'pos':+margem>=0?'warn':'neg'],
-  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${v}</span></div>`).join('');
+  const margemEl=document.getElementById('dash-fin-margem');
+  if(margemEl)margemEl.innerHTML=[['Ticket Médio',`R$ ${fmt(ticket)}`,'pos'],['Margem Bruta','77%','pos'],['Ponto de Equilíbrio',`R$ ${fmt(totalCustos/0.77)}`,'warn'],['Vendas p/ Breakeven',`${Math.ceil(totalCustos/0.77/(ticket||1))} vendas`,'warn'],['Margem Operacional',margem+'%',+margem>=20?'pos':+margem>=0?'warn':'neg']].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${v}</span></div>`).join('');
 }
 
 function renderDashOperacional(){
   const kpis=document.getElementById('dash-op-kpis');
-  if(kpis) kpis.innerHTML=[
-    {l:'Clientes Ativos',v:clientesAtivos.length,a:'--cyan'},
-    {l:'Reuniões Entregues',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0),a:'--green'},
-    {l:'Reuniões Pendentes',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0),a:'--orange'},
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
+  if(kpis)kpis.innerHTML=[{l:'Clientes Ativos',v:clientesAtivos.length,a:'--cyan'},{l:'Reuniões Entregues',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0),a:'--green'},{l:'Reuniões Pendentes',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0),a:'--orange'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   const cl=document.getElementById('dash-op-clientes');
-  if(cl) cl.innerHTML=clientesAtivos.length?clientesAtivos.map(c=>{
-    const done=c.reunioes.filter(r=>r.status==='entregue').length;
-    const pct=Math.round((done/24)*100);
-    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div>
-      <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.resp} · ${c.produto}</div></div>
-      <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cyan)">${done}/24 reuniões</div>
-      <div style="width:80px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:4px"><div style="height:100%;background:var(--cyan);width:${pct}%"></div></div></div>
-    </div>`;
-  }).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum cliente ativo</div>';
-
+  if(cl)cl.innerHTML=clientesAtivos.length?clientesAtivos.map(c=>{const done=c.reunioes.filter(r=>r.status==='entregue').length;const pct=Math.round((done/24)*100);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.resp} · ${c.produto}</div></div><div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cyan)">${done}/24</div><div style="width:80px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:4px"><div style="height:100%;background:var(--cyan);width:${pct}%"></div></div></div></div>`;}).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum cliente ativo</div>';
   const plEl=document.getElementById('dash-op-plano');
-  if(plEl){
-    const s=compute();
-    const acoes=[];
-    if(leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length} leads quentes em aberto`,tag:'URGENTE',cor:'var(--orange)'});
-    if(leads.filter(l=>!l.temp&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>!l.temp&&l.status==='ativo').length} leads sem temperatura`,tag:'ESTA SEMANA',cor:'var(--yellow)'});
-    if(leads.filter(l=>l.ordem===4&&l.status==='ativo').length>0) acoes.push({titulo:`${leads.filter(l=>l.ordem===4&&l.status==='ativo').length} leads em Fechamento`,tag:'ESTE MÊS',cor:'var(--green)'});
-    plEl.innerHTML=acoes.length?acoes.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text)">${a.titulo}</span><span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.3);color:${a.cor}">${a.tag}</span></div>`).join(''):'<div style="color:var(--green);font-size:12px;padding:12px 0">✓ Sem alertas críticos</div>';
-  }
+  if(plEl){const acoes=[];if(leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length} leads quentes em aberto`,tag:'URGENTE',cor:'var(--orange)'});if(leads.filter(l=>!l.temp&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>!l.temp&&l.status==='ativo').length} leads sem temperatura`,tag:'ESTA SEMANA',cor:'var(--yellow)'});if(leads.filter(l=>l.ordem===4&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>l.ordem===4&&l.status==='ativo').length} leads em Fechamento`,tag:'ESTE MÊS',cor:'var(--green)'});plEl.innerHTML=acoes.length?acoes.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text)">${a.titulo}</span><span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.3);color:${a.cor}">${a.tag}</span></div>`).join(''):'<div style="color:var(--green);font-size:12px;padding:12px 0">✓ Sem alertas críticos</div>';}
 }
 
 async function renderDashRH(){
-  const {data:colabs}=await sb.from('colaboradores').select('*').eq('empresa_id','11111111-1111-1111-1111-111111111111').eq('status','ativo');
-  const {data:vagas}=await sb.from('vagas').select('*').eq('empresa_id','11111111-1111-1111-1111-111111111111').eq('status','aberta');
+  const{data:colabs}=await sb.from('colaboradores').select('*').eq('empresa_id',EMPRESA_ID).eq('status','ativo');
+  const{data:vagas}=await sb.from('vagas').select('*').eq('empresa_id',EMPRESA_ID).eq('status','aberta');
   const folha=(colabs||[]).reduce((s,c)=>s+Number(c.salario),0);
-
   const kpis=document.getElementById('dash-rh-kpis');
-  if(kpis) kpis.innerHTML=[
-    {l:'Colaboradores Ativos',v:(colabs||[]).length,a:'--cyan'},
-    {l:'Folha Mensal',v:'R$ '+fmt(folha),a:'--orange'},
-    {l:'Vagas Abertas',v:(vagas||[]).length,a:'--green'},
-  ].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
-
+  if(kpis)kpis.innerHTML=[{l:'Colaboradores Ativos',v:(colabs||[]).length,a:'--cyan'},{l:'Folha Mensal',v:'R$ '+fmt(folha),a:'--orange'},{l:'Vagas Abertas',v:(vagas||[]).length,a:'--green'}].map(c=>`<div class="kpi-card" style="--accent-color:var(${c.a})"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div></div>`).join('');
   const timeEl=document.getElementById('dash-rh-time');
-  if(timeEl) timeEl.innerHTML=(colabs||[]).length?(colabs||[]).map(c=>`
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-      ${c.foto_url?`<img src="${c.foto_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#000;flex-shrink:0">${(c.nome||'').slice(0,2).toUpperCase()}</div>`}
-      <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div>
-      <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.cargo||'—'}</div></div>
-      <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">R$ ${fmt(c.salario||0)}</div>
-      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${c.admissao?calcTempo(c.admissao):'—'}</div></div>
-    </div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum colaborador cadastrado</div>';
-
+  if(timeEl)timeEl.innerHTML=(colabs||[]).length?(colabs||[]).map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">${c.foto_url?`<img src="${c.foto_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`:`<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#000;flex-shrink:0">${(c.nome||'').slice(0,2).toUpperCase()}</div>`}<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">${c.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">${c.cargo||'—'}</div></div><div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">R$ ${fmt(c.salario||0)}</div></div></div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhum colaborador cadastrado</div>';
   const vagEl=document.getElementById('dash-rh-vagas');
-  if(vagEl) vagEl.innerHTML=(vagas||[]).length?(vagas||[]).map(v=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;color:var(--text)">${v.titulo}</div>
-      <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,230,118,.12);color:var(--green)">● Aberta</span>
-    </div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhuma vaga aberta</div>';
+  if(vagEl)vagEl.innerHTML=(vagas||[]).length?(vagas||[]).map(v=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:700;color:var(--text)">${v.titulo}</div><span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,230,118,.12);color:var(--green)">● Aberta</span></div>`).join(''):'<div style="color:var(--text2);font-size:12px;padding:12px 0">Nenhuma vaga aberta</div>';
 }
-async function renderPerformance() {
-  const perf = document.getElementById('perf-tbody');
-  const perfKpis = document.getElementById('perf-kpis');
-  if (!perf) return;
-  perf.innerHTML = '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Carregando dados...</td></tr>';
 
-  // buscar todas empresas (excluindo a interna)
-  const { data: emps } = await sb.from('empresas').select('*')
-    .neq('id','11111111-1111-1111-1111-111111111111')
-    .neq('plano','interno')
-    .order('nome');
-
-  if (!emps || !emps.length) {
-    perf.innerHTML = '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma empresa cliente cadastrada</td></tr>';
-    return;
-  }
-
-  document.getElementById('perf-badge').textContent = emps.length + ' empresas';
-  document.getElementById('perf-updated').textContent = '↻ Atualizado: ' + new Date().toLocaleString('pt-BR');
-
-  let totalFat = 0, totalLeads = 0, totalVendas = 0;
-  const rows = [];
-
-  for (const emp of emps) {
-    const [{ data: leadsEmp }, { data: finEmp }, { data: custosEmp }] = await Promise.all([
-      sb.from('leads').select('*').eq('empresa_id', emp.id),
-      sb.from('financeiro').select('*').eq('empresa_id', emp.id).eq('tipo','entrada').eq('status','pago'),
-      sb.from('custos_cliente').select('*').eq('empresa_id', emp.id)
-    ]);
-
-    const ls = leadsEmp || [];
-    const vendas = ls.filter(l => l.status === 'venda');
-    const faturamento = vendas.reduce((s, l) => s + Number(l.receita), 0);
-    // também soma entradas financeiras pagas
-    const finPago = (finEmp||[]).reduce((s,f) => s + Number(f.valor), 0);
-    const fatTotal = faturamento + finPago;
-    const recLiq = fatTotal * 0.77;
-    const custosTot = (custosEmp||[]).reduce((s,c) => s + Number(c.valor), 0);
-    const resultado = recLiq - custosTot;
-    const margem = recLiq > 0 ? ((resultado/recLiq)*100).toFixed(1) : 0;
-    const ligacoes = ls.filter(l => l.origem === 'Ligação').length;
-    const txConv = ls.length > 0 ? ((vendas.length/ls.length)*100).toFixed(1) : 0;
-
-    // vendedor campeão
-    const vendMap = {};
-    vendas.forEach(l => { if(l.vendedor) vendMap[l.vendedor] = (vendMap[l.vendedor]||0)+1; });
-    const topVend = Object.entries(vendMap).sort((a,b)=>b[1]-a[1])[0];
-
-    totalFat += fatTotal;
-    totalLeads += ls.length;
-    totalVendas += vendas.length;
-
-    const margemColor = +margem >= 20 ? 'var(--green)' : +margem >= 0 ? 'var(--yellow)' : 'var(--red)';
-    const txColor = +txConv >= 20 ? 'var(--green)' : +txConv >= 10 ? 'var(--yellow)' : 'var(--text2)';
-
+async function renderPerformance(){
+  const perf=document.getElementById('perf-tbody');const perfKpis=document.getElementById('perf-kpis');
+  if(!perf)return;
+  perf.innerHTML='<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Carregando dados...</td></tr>';
+  const{data:emps}=await sb.from('empresas').select('*').neq('id',EMPRESA_ID).neq('plano','interno').order('nome');
+  if(!emps||!emps.length){perf.innerHTML='<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma empresa cliente cadastrada</td></tr>';return;}
+  document.getElementById('perf-badge').textContent=emps.length+' empresas';
+  document.getElementById('perf-updated').textContent='↻ Atualizado: '+new Date().toLocaleString('pt-BR');
+  let totalFat=0,totalLeads=0,totalVendas=0;const rows=[];
+  for(const emp of emps){
+    const[{data:leadsEmp},{data:finEmp},{data:custosEmp}]=await Promise.all([sb.from('leads').select('*').eq('empresa_id',emp.id),sb.from('financeiro').select('*').eq('empresa_id',emp.id).eq('tipo','entrada').eq('status','pago'),sb.from('custos_cliente').select('*').eq('empresa_id',emp.id)]);
+    const ls=leadsEmp||[];const vendas=ls.filter(l=>l.status==='venda');
+    const faturamento=vendas.reduce((s,l)=>s+Number(l.receita),0);
+    const finPago=(finEmp||[]).reduce((s,f)=>s+Number(f.valor),0);
+    const fatTotal=faturamento+finPago;const recLiq=fatTotal*0.77;
+    const custosTot=(custosEmp||[]).reduce((s,c)=>s+Number(c.valor),0);
+    const resultado=recLiq-custosTot;const margem=recLiq>0?((resultado/recLiq)*100).toFixed(1):0;
+    const ligacoes=ls.filter(l=>l.origem==='Ligação').length;const txConv=ls.length>0?((vendas.length/ls.length)*100).toFixed(1):0;
+    const vendMap={};vendas.forEach(l=>{if(l.vendedor)vendMap[l.vendedor]=(vendMap[l.vendedor]||0)+1;});
+    const topVend=Object.entries(vendMap).sort((a,b)=>b[1]-a[1])[0];
+    totalFat+=fatTotal;totalLeads+=ls.length;totalVendas+=vendas.length;
+    const margemColor=+margem>=20?'var(--green)':+margem>=0?'var(--yellow)':'var(--red)';
+    const txColor=+txConv>=20?'var(--green)':+txConv>=10?'var(--yellow)':'var(--text2)';
     rows.push(`<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:11px 14px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text)">${emp.nome}</td>
       <td style="padding:11px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--cyan)">R$ ${Math.round(fatTotal).toLocaleString('pt-BR')}</td>
@@ -1598,37 +1407,24 @@ async function renderPerformance() {
       <td style="padding:11px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2)">${ls.length}</td>
       <td style="padding:11px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2)">${ligacoes}</td>
       <td style="padding:11px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:${txColor}">${txConv}%</td>
-      <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--orange)">${topVend ? `${topVend[0]} (${topVend[1]}v)` : '—'}</td>
+      <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--orange)">${topVend?`${topVend[0]} (${topVend[1]}v)`:'—'}</td>
       <td style="padding:11px 14px"><span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,212,255,.1);color:var(--cyan)">${(emp.plano||'').replace('_',' ')}</span></td>
     </tr>`);
   }
-
-  perf.innerHTML = rows.join('') + `<tr style="border-top:2px solid var(--border);background:var(--surface2)">
+  perf.innerHTML=rows.join('')+`<tr style="border-top:2px solid var(--border);background:var(--surface2)">
     <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:1px">TOTAL CONSOLIDADO</td>
     <td style="padding:12px 14px;text-align:right;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--cyan)">R$ ${Math.round(totalFat).toLocaleString('pt-BR')}</td>
     <td colspan="3" style="padding:12px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${totalLeads} leads totais</td>
     <td colspan="2" style="padding:12px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${totalVendas} vendas totais</td>
-    <td colspan="2" style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${totalLeads > 0 ? ((totalVendas/totalLeads)*100).toFixed(1) : 0}% conversão geral</td>
+    <td colspan="2" style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${totalLeads>0?((totalVendas/totalLeads)*100).toFixed(1):0}% conversão geral</td>
   </tr>`;
-
-  if (perfKpis) {
-    perfKpis.innerHTML = [
-      {l:'Faturamento Total',v:'R$ '+Math.round(totalFat).toLocaleString('pt-BR'),sub:'todos os clientes',a:'--cyan'},
-      {l:'Total de Clientes',v:emps.length,sub:'empresas ativas',a:'--green'},
-      {l:'Leads Captados',v:totalLeads,sub:'por todos os clientes',a:'--orange'},
-      {l:'Vendas Realizadas',v:totalVendas,sub:totalLeads>0?((totalVendas/totalLeads)*100).toFixed(1)+'% conversão':'—',a:'--yellow'},
-    ].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
-  }
+  if(perfKpis)perfKpis.innerHTML=[{l:'Faturamento Total',v:'R$ '+Math.round(totalFat).toLocaleString('pt-BR'),sub:'todos os clientes',a:'--cyan'},{l:'Total de Clientes',v:emps.length,sub:'empresas ativas',a:'--green'},{l:'Leads Captados',v:totalLeads,sub:'por todos os clientes',a:'--orange'},{l:'Vendas Realizadas',v:totalVendas,sub:totalLeads>0?((totalVendas/totalLeads)*100).toFixed(1)+'% conversão':'—',a:'--yellow'}].map((c,i)=>`<div class="kpi-card" style="--accent-color:var(${c.a});animation-delay:${i*.06}s"><div class="kpi-label">${c.l}</div><div class="kpi-value">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
 }
 
-// ── EMPRESAS ADMIN ──────────────────────────────────────
-async function renderEmpresasAdmin() {
-  const tbody = document.getElementById('emp-admin-tbody');
-  if (!tbody) return;
-  const { data: emps } = await sb.from('empresas').select('*')
-    .neq('plano','interno').order('criado_em', { ascending: false });
-
-  tbody.innerHTML = (emps||[]).length ? (emps||[]).map(e => `
+async function renderEmpresasAdmin(){
+  const tbody=document.getElementById('emp-admin-tbody');if(!tbody)return;
+  const{data:emps}=await sb.from('empresas').select('*').neq('plano','interno').order('criado_em',{ascending:false});
+  tbody.innerHTML=(emps||[]).length?(emps||[]).map(e=>`
     <tr style="border-bottom:1px solid var(--border)">
       <td style="padding:11px 14px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text)">${e.nome}</td>
       <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${e.email_admin}</td>
@@ -1638,139 +1434,67 @@ async function renderEmpresasAdmin() {
         <button class="btn btn-sm" style="color:var(--cyan);border:1px solid rgba(0,212,255,.3);background:transparent" onclick="enviarConviteAdmin('${e.email_admin}','${e.nome}')">✉ convidar</button>
         <button class="btn btn-sm" style="color:var(--red);border:1px solid rgba(255,71,87,.3);background:transparent" onclick="deleteEmpresaAdmin('${e.id}')">✕</button>
       </td>
-    </tr>`).join('') : '<tr><td colspan="5" style="padding:30px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma empresa cadastrada</td></tr>';
-
-  // Solicitações pendentes
-  const { data: sols } = await sb.from('solicitacoes').select('*').eq('status','pendente').order('criado_em', { ascending: false });
-  const solLista = document.getElementById('sol-lista');
-  if (solLista) {
-    solLista.innerHTML = (sols||[]).length ? (sols||[]).map(s => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text)">${s.nome_empresa}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-top:2px">${s.responsavel||'—'} · ${s.email} · ${s.telefone||'—'}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px">${new Date(s.criado_em).toLocaleString('pt-BR')}</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-sm btn-green" onclick="aprovarSolicitacao('${s.id}','${s.nome_empresa}','${s.email}')">✓ Aprovar</button>
-          <button class="btn btn-sm" style="color:var(--red);border:1px solid rgba(255,71,87,.3);background:transparent" onclick="rejeitarSolicitacao('${s.id}')">✕ Rejeitar</button>
-        </div>
-      </div>`).join('') :
-      '<div style="padding:24px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma solicitação pendente ✓</div>';
-  }
+    </tr>`).join(''):'<tr><td colspan="5" style="padding:30px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma empresa cadastrada</td></tr>';
+  const{data:sols}=await sb.from('solicitacoes').select('*').eq('status','pendente').order('criado_em',{ascending:false});
+  const solLista=document.getElementById('sol-lista');
+  if(solLista)solLista.innerHTML=(sols||[]).length?(sols||[]).map(s=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text)">${s.nome_empresa}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-top:2px">${s.responsavel||'—'} · ${s.email} · ${s.telefone||'—'}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px">${new Date(s.criado_em).toLocaleString('pt-BR')}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-green" onclick="aprovarSolicitacao('${s.id}','${s.nome_empresa}','${s.email}')">✓ Aprovar</button>
+        <button class="btn btn-sm" style="color:var(--red);border:1px solid rgba(255,71,87,.3);background:transparent" onclick="rejeitarSolicitacao('${s.id}')">✕ Rejeitar</button>
+      </div>
+    </div>`).join(''):'<div style="padding:24px;text-align:center;color:var(--text2);font-family:\'DM Mono\',monospace;font-size:12px">Nenhuma solicitação pendente ✓</div>';
 }
 
-async function enviarConviteAdmin(email, nome) {
-  const senha = prompt(`Defina uma senha para ${email}:\n(mínimo 8 caracteres)`);
-  if (!senha || senha.length < 8) { alert('Senha deve ter mínimo 8 caracteres.'); return; }
+async function enviarConviteAdmin(email,nome){
+  const senha=prompt(`Defina uma senha para ${email}:\n(mínimo 8 caracteres)`);
+  if(!senha||senha.length<8){alert('Senha deve ter mínimo 8 caracteres.');return;}
   showToast('Criando acesso...');
-  try {
-    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
-      body: JSON.stringify({ email, empresa_nome: nome, senha, modo: 'senha' })
-    });
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
-    abrirEmailCredenciais(email, nome, senha);
-    showToast(`✓ Acesso criado! Abra o e-mail e envie para ${email}.`);
-  } catch(err) {
-    showToast('Erro: ' + err.message);
-  }
+  try{
+    const res=await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({email,empresa_nome:nome,senha,modo:'senha'})});
+    const result=await res.json();if(result.error)throw new Error(result.error);
+    abrirEmailCredenciais(email,nome,senha);showToast(`✓ Acesso criado!`);
+  }catch(err){showToast('Erro: '+err.message);}
 }
 
-async function aprovarSolicitacao(id, nomeEmpresa, email) {
-  const senha = prompt(`Aprovando: ${nomeEmpresa}\n\nDefina a senha de acesso para ${email}:\n(mínimo 8 caracteres)`);
-  if (!senha || senha.length < 8) { alert('Senha deve ter mínimo 8 caracteres.'); return; }
-  if (!confirm(`Confirmar aprovação de ${nomeEmpresa}?`)) return;
-
-  // 1. Criar empresa no banco
-  const { data: emp, error: empErr } = await sb.from('empresas').insert({
-    nome: nomeEmpresa, email_admin: email, plano: 'escudo_21'
-  }).select().single();
-  if (empErr && !empErr.message.includes('duplicate')) {
-    showToast('Erro ao criar empresa: ' + empErr.message); return;
-  }
-
-  // 2. Criar usuário vinculado à empresa
-  if (emp?.id) {
-    await sb.from('usuarios').insert({
-      empresa_id: emp.id, nome: nomeEmpresa, email, perfil: 'admin'
-    });
-  }
-
-  // 3. Marcar como aprovado
-  await sb.from('solicitacoes').update({ status: 'aprovado' }).eq('id', id);
-
-  // 4. Criar conta via Edge Function
+async function aprovarSolicitacao(id,nomeEmpresa,email){
+  const senha=prompt(`Aprovando: ${nomeEmpresa}\n\nDefina a senha de acesso para ${email}:\n(mínimo 8 caracteres)`);
+  if(!senha||senha.length<8){alert('Senha deve ter mínimo 8 caracteres.');return;}
+  if(!confirm(`Confirmar aprovação de ${nomeEmpresa}?`))return;
+  const{data:emp,error:empErr}=await sb.from('empresas').insert({nome:nomeEmpresa,email_admin:email,plano:'escudo_21'}).select().single();
+  if(empErr&&!empErr.message.includes('duplicate')){showToast('Erro ao criar empresa: '+empErr.message);return;}
+  if(emp?.id)await sb.from('usuarios').insert({empresa_id:emp.id,nome:nomeEmpresa,email,perfil:'admin'});
+  await sb.from('solicitacoes').update({status:'aprovado'}).eq('id',id);
   showToast('Criando conta...');
-  try {
-    const res = await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla' },
-      body: JSON.stringify({ email, empresa_nome: nomeEmpresa, senha, modo: 'senha' })
-    });
-    const result = await res.json();
-    if (result.error) throw new Error(result.error);
-  } catch(err) {
-    showToast('Aviso: conta pode já existir. Continuando...');
-  }
-
-  // 5. Abrir e-mail pronto para envio
-  abrirEmailCredenciais(email, nomeEmpresa, senha);
-  showToast(`✓ ${nomeEmpresa} aprovada! Revise e envie o e-mail.`);
-  renderEmpresasAdmin();
+  try{
+    const res=await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/rapid-processor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({email,empresa_nome:nomeEmpresa,senha,modo:'senha'})});
+    const result=await res.json();if(result.error)throw new Error(result.error);
+  }catch(err){showToast('Aviso: conta pode já existir. Continuando...');}
+  abrirEmailCredenciais(email,nomeEmpresa,senha);showToast(`✓ ${nomeEmpresa} aprovada!`);renderEmpresasAdmin();
 }
 
-function abrirEmailCredenciais(email, nomeEmpresa, senha) {
-  const assunto = encodeURIComponent('Seu acesso ao Portal Digital Pressure');
-  const corpo = encodeURIComponent(
-`Olá, ${nomeEmpresa}!
-
-Seu acesso ao Portal Digital Pressure foi aprovado. Seguem suas credenciais:
-
-🌐 Portal: https://dp-crm-cliente.vercel.app
-📧 E-mail: ${email}
-🔑 Senha: ${senha}
-
-Acesse agora e explore seu painel completo com CRM, financeiro, colaboradores e vagas.
-
-Qualquer dúvida estamos à disposição.
-
-— Equipe Digital Pressure
-grupo@digitalpressure.com.br`
-  );
-  window.open(`mailto:${email}?subject=${assunto}&body=${corpo}`, '_blank');
+function abrirEmailCredenciais(email,nomeEmpresa,senha){
+  const assunto=encodeURIComponent('Seu acesso ao Portal Digital Pressure');
+  const corpo=encodeURIComponent(`Olá, ${nomeEmpresa}!\n\nSeu acesso ao Portal Digital Pressure foi aprovado. Seguem suas credenciais:\n\n🌐 Portal: https://dp-crm-cliente.vercel.app\n📧 E-mail: ${email}\n🔑 Senha: ${senha}\n\nAcesse agora e explore seu painel completo.\n\n— Equipe Digital Pressure\ngrupo@digitalpressure.com.br`);
+  window.open(`mailto:${email}?subject=${assunto}&body=${corpo}`,'_blank');
 }
 
-async function rejeitarSolicitacao(id) {
-  if (!confirm('Rejeitar esta solicitação?')) return;
-  await sb.from('solicitacoes').update({ status: 'rejeitado' }).eq('id', id);
-  showToast('Solicitação rejeitada');
-  renderEmpresasAdmin();
-}
-
-async function deleteEmpresaAdmin(id) {
-  if (!confirm('Remover empresa? Todos os dados relacionados serão excluídos.')) return;
-  await sb.from('empresas').delete().eq('id', id);
-  showToast('Empresa removida');
-  renderEmpresasAdmin();
-}
-
-function openEmpresaModalAdmin() {
-  // reutiliza modal de empresa existente se houver, ou cria inline
-  const nome = prompt('Nome da empresa:');
-  if (!nome) return;
-  const email = prompt('E-mail do admin da empresa:');
-  if (!email) return;
-  const plano = prompt('Plano (escudo_21 ou aceleracao_6):', 'escudo_21');
-  sb.from('empresas').insert({ nome, email_admin: email, plano: plano||'escudo_21' })
-    .then(() => { showToast('✓ Empresa cadastrada!'); renderEmpresasAdmin(); });
+async function rejeitarSolicitacao(id){if(!confirm('Rejeitar esta solicitação?'))return;await sb.from('solicitacoes').update({status:'rejeitado'}).eq('id',id);showToast('Solicitação rejeitada');renderEmpresasAdmin();}
+async function deleteEmpresaAdmin(id){if(!confirm('Remover empresa? Todos os dados relacionados serão excluídos.'))return;await sb.from('empresas').delete().eq('id',id);showToast('Empresa removida');renderEmpresasAdmin();}
+function openEmpresaModalAdmin(){
+  const nome=prompt('Nome da empresa:');if(!nome)return;
+  const email=prompt('E-mail do admin da empresa:');if(!email)return;
+  const plano=prompt('Plano (escudo_21 ou aceleracao_6):','escudo_21');
+  sb.from('empresas').insert({nome,email_admin:email,plano:plano||'escudo_21'}).then(()=>{showToast('✓ Empresa cadastrada!');renderEmpresasAdmin();});
 }
 
 // Clock
 setInterval(()=>{document.getElementById('nowTime').textContent=new Date().toLocaleString('pt-BR');},1000);
-// Inicializar filtro com "este mês"
 window.addEventListener('load',()=>{setTimeout(()=>{aplicarFiltro();},800);});
 renderAll();
 </script>
