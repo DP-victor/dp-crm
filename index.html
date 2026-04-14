@@ -758,7 +758,7 @@ let planoChecks={};
 // COMPUTED
 // ══════════════════════════════════════════════════
 function compute(){
-  const ls=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
+  const ls=getLeadsAtivos();
   const total=ls.length;
   const vendas=ls.filter(l=>l.status==='venda');
   const perdidos=ls.filter(l=>l.status==='perdido');
@@ -918,7 +918,7 @@ function renderOverview(){
 
 // ══ KANBAN ══
 function renderKanban(){
-  const ls=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
+  const ls=getLeadsAtivos();
   const cols=[1,2,3,4,5];
   document.getElementById('kanbanWrap').innerHTML=cols.map(e=>{
     const items=ls.filter(l=>l.ordem===e);
@@ -958,7 +958,7 @@ function moverKanban(id,dir){
 
 // ══ LEADS TABLE ══
 function renderLeads(){
-  const base=leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;
+  const base=getLeadsAtivos();
   const q=(document.getElementById('srchQ').value||'').toLowerCase();
   const fs=document.getElementById('fStatus').value;
   const ft=document.getElementById('fTemp').value;
@@ -1469,18 +1469,36 @@ function getFiltroRange(){
   return{de,ate};
 }
 
+function parseData(str){
+  if(!str) return null;
+  // suporta dd/mm/yyyy e yyyy-mm-dd
+  if(str.includes('/')) return new Date(str.split('/').reverse().join('-')+'T00:00:00');
+  return new Date(str+'T00:00:00');
+}
+
 function aplicarFiltro(){
   const p=document.getElementById('filter-periodo')?.value;
   const deEl=document.getElementById('filter-de');
   const ateEl=document.getElementById('filter-ate');
   if(deEl)deEl.style.display=p==='personalizado'?'block':'none';
   if(ateEl)ateEl.style.display=p==='personalizado'?'block':'none';
+
+  if(p==='todos'){
+    leadsFiltrados=[...leads];
+    renderAll();
+    if(document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
+    return;
+  }
+
   const{de,ate}=getFiltroRange();
   if(de&&ate){
     leadsFiltrados=leads.filter(l=>{
-      if(!l.conexao)return false;
-      const d=new Date(l.conexao.includes('/')?l.conexao.split('/').reverse().join('-'):l.conexao);
-      return d>=de&&d<=ate;
+      // filtra por data de conexão OU data de fechamento (se venda)
+      const dConexao = parseData(l.conexao);
+      const dFechamento = l.status==='venda' && l.data_fechamento ? parseData(l.data_fechamento) : null;
+      const dentroConexao = dConexao && dConexao>=de && dConexao<=ate;
+      const dentroFechamento = dFechamento && dFechamento>=de && dFechamento<=ate;
+      return dentroConexao || dentroFechamento;
     });
   } else {
     leadsFiltrados=[...leads];
@@ -1489,7 +1507,11 @@ function aplicarFiltro(){
   if(document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
 }
 
-function getLeadsAtivos(){return leadsFiltrados.length>0||document.getElementById('filter-periodo')?.value!=='todos'?leadsFiltrados:leads;}
+function getLeadsAtivos(){
+  const p=document.getElementById('filter-periodo')?.value||'todos';
+  if(p==='todos') return leads;
+  return leadsFiltrados;
+}
 
 // ══ DASHBOARD ══
 function switchDashTab(area,el){
@@ -1707,7 +1729,14 @@ function openEmpresaModalAdmin(){
 
 // Clock
 setInterval(()=>{document.getElementById('nowTime').textContent=new Date().toLocaleString('pt-BR');},1000);
-window.addEventListener('load',()=>{setTimeout(()=>{aplicarFiltro();},800);});
+// Inicializa leadsFiltrados e aplica filtro após Supabase carregar
+window.addEventListener('load',()=>{
+  leadsFiltrados=[...leads];
+  setTimeout(()=>{
+    leadsFiltrados=[...leads];
+    aplicarFiltro();
+  },1200);
+});
 renderAll();
 </script>
 </body>
