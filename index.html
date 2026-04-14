@@ -869,7 +869,7 @@ async function converterParaKanban(diagId, nome, whatsapp, faturamento, segmento
     status: 'ativo',
     temperatura: nivel === 'critico' ? 'quente' : nivel === 'atencao' ? 'morno' : 'frio',
     receita: 0,
-    conexao: new Date().toLocaleDateString('pt-BR'),
+    conexao: new Date().toISOString().slice(0,10),
     observacoes: `Origem: Diagnóstico · Faturamento: ${faturamento} · Segmento: ${segmento} · Objetivo: ${objetivo}`,
     atualizado_em: new Date().toISOString()
   };
@@ -884,7 +884,7 @@ async function converterParaKanban(diagId, nome, whatsapp, faturamento, segmento
     id: leadCriado.id, nome, tel: whatsapp||'', origem: 'Diagnóstico',
     vendedor: '', prospectador: '', produto: 'Escudo 21', ordem: 1,
     status: 'ativo', temp: nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',
-    receita: 0, conexao: new Date().toLocaleDateString('pt-BR'),
+    receita: 0, conexao: new Date().toISOString().slice(0,10),
     obs: `Faturamento: ${faturamento} · Segmento: ${segmento} · Objetivo: ${objetivo}`
   });
 
@@ -1312,20 +1312,6 @@ function renderClientes(){
   document.getElementById('clientesWrap').innerHTML=lista.map(c=>{
     const done=c.reunioes.filter(r=>r.status==='entregue').length;
     const pct=Math.round((done/24)*100);
-    // carrega relatórios do Supabase para este cliente (async, silencioso)
-    carregarRelatorios(c.nome).then(()=>{
-      const wrap = document.getElementById(`clb-${c.id}`);
-      if(wrap && wrap.classList.contains('open')){
-        // re-renderiza só os cards se já estiver aberto
-        wrap.querySelectorAll('.reuniao-item').forEach(el => {
-          const n = parseInt(el.id.split('_').pop());
-          if(!isNaN(n)){
-            const r = REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===n);
-            if(r) el.outerHTML = buildReuniaoCard(c, r);
-          }
-        });
-      }
-    });
     return`<div class="cl-card">
       <div class="cl-head" onclick="toggleCliente(${c.id})">
         <div><div class="cl-nome">${c.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px">${c.resp} · ${c.produto} · desde ${c.inicio||'—'}</div></div>
@@ -1357,9 +1343,26 @@ function toggleCliente(id){
   const isOpening = !el.classList.contains('open');
   el.classList.toggle('open');
   if(isOpening){
-    // carrega relatórios ao abrir
     const c = clientesAtivos.find(x=>x.id===id);
-    if(c) carregarRelatorios(c.nome).then(()=>{ renderClientes(); });
+    if(!c) return;
+    // Se já carregou, apenas abre. Se não, carrega e re-renderiza só este cliente
+    carregarRelatorios(c.nome).then(()=>{
+      // re-renderiza os cards de reunião deste cliente sem fechar nada
+      const wrap = document.getElementById('clb-'+id);
+      if(!wrap) return;
+      wrap.querySelectorAll('.reuniao-item[id]').forEach(riEl => {
+        const parts = riEl.id.split('_');
+        const n = parseInt(parts[parts.length-1]);
+        if(!isNaN(n)){
+          const r = REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===n);
+          if(r){
+            const novo = document.createElement('div');
+            novo.innerHTML = buildReuniaoCard(c, r);
+            riEl.replaceWith(novo.firstElementChild);
+          }
+        }
+      });
+    });
   }
 }
 function updateReuniao(cid,n,field,val){const c=clientesAtivos.find(x=>x.id===cid);if(!c)return;const r=c.reunioes.find(x=>x.n===n);if(r){r[field]=val;showToast('✓ Reunião atualizada');renderClientes();}}
