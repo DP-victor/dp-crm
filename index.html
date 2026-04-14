@@ -1113,6 +1113,194 @@ function toggleCheck(aid,ci,checked){
 }
 const renderPlano=gerarPlano;
 
+// ══ PLAYBOOK — perguntas por reunião ══
+const PLAYBOOK = {
+  1: {resp:'Grupo', perguntas:[
+    'Faturamento dos últimos 3 meses apresentado?',
+    'Quanto sobrou líquido — definido?',
+    'Margem do negócio hoje — definida?',
+    'Cenário financeiro identificado (ruim / inconsistente)?',
+    'Diagnóstico operacional realizado?',
+    'De onde vêm as vendas hoje — mapeado?',
+    'Como funciona a entrega hoje — mapeado?',
+    'Raio-x estratégico realizado?',
+    'Meta da empresa definida?',
+    'O que mais trava o crescimento — identificado?',
+    'Próximos passos definidos com prazo e responsável?'
+  ]},
+  2: {resp:'Victor', perguntas:[
+    'Números apresentados com clareza?',
+    'Lead teve clareza dos próprios números?',
+    'Análise de lucro e custos realizada?',
+    'Onde mais está perdendo dinheiro — identificado?',
+    'Problema é falta de vendas ou falta de controle — definido?',
+    'Payback construído com prazo estimado?',
+    'Meta mensal definida (realista, base e super meta)?',
+    'Lead comprometeu-se a ser cobrado pela meta?'
+  ]},
+  3: {resp:'Grupo', perguntas:[
+    'Check de execução desde última reunião realizado?',
+    'Organização de entradas e saídas estruturada?',
+    'Lead registra 100% das entradas e saídas?',
+    'Responsável financeiro definido?',
+    'Fluxo de caixa dos próximos 30 dias estruturado?',
+    'Rotina diária e semanal financeira criada?',
+    'Conexão com a meta estabelecida?'
+  ]},
+  4: {resp:'Victor', perguntas:[
+    'Indicadores lidos e compreendidos pelo cliente?',
+    'Análise de performance realizada?',
+    'Principal gargalo identificado?',
+    'O que precisa acontecer esta semana para bater a meta — definido?',
+    'Plano de ação com responsável e prazo fechado?',
+    'Lead comprometeu-se com a ação prática?'
+  ]},
+  5: {resp:'Grupo', perguntas:[
+    'Análise de números realizada?','Comparação com meta feita?','Falhas identificadas?','Ajuste de execução definido?','Plano de ação fechado?'
+  ]},
+  6: {resp:'Grupo', perguntas:[
+    'Revisão de processos feita?','Gargalos identificados?','Rotinas corrigidas?','Plano de ação fechado?'
+  ]},
+  7: {resp:'Grupo', perguntas:[
+    'Análise financeira realizada?','Performance avaliada?','Meta pressionada?','Ações definidas?'
+  ]},
+  8: {resp:'Grupo', perguntas:[
+    'Revisão geral feita?','Padrões identificados?','O que funciona foi padronizado?','Plano de ação fechado?'
+  ]},
+  9: {resp:'Victor', perguntas:[
+    'Histórico financeiro analisado?','Projeções construídas?','Cenários financeiros apresentados?','Ajustes estratégicos definidos?'
+  ]},
+  10: {resp:'Victor', perguntas:[
+    'Análise de custos feita?','Desperdícios identificados?','Margem aumentada ou plano para isso?','Plano de ação fechado?'
+  ]},
+  11: {resp:'Grupo', perguntas:[
+    'Crescimento analisado?','Oportunidades identificadas?','Planejamento de expansão feito?','Plano de ação fechado?'
+  ]},
+  12: {resp:'Grupo', perguntas:[
+    'Revisão operacional feita?','Equipe organizada?','Processos definidos?','Plano de ação fechado?'
+  ]},
+  13: {resp:'Grupo', perguntas:[
+    'Resultados revisados?','Planejamento futuro feito?','Novas metas definidas?','Direcionamento final dado?'
+  ]},
+  14: {resp:'Grupo', perguntas:[
+    'Comparação antes vs depois apresentada?','Resultados alcançados documentados?','Aprendizados mapeados?','Próximos passos definidos?'
+  ]},
+};
+
+// Cache de relatórios carregados do Supabase
+let playbookCache = {}; // chave: "clienteNome_reuniaoNum"
+
+async function carregarRelatorios(clienteNome){
+  const { data } = await sb.from('reunioes_relatorios')
+    .select('*').eq('empresa_id', EMPRESA_ID).eq('cliente_nome', clienteNome);
+  (data||[]).forEach(r => {
+    playbookCache[`${clienteNome}_${r.reuniao_num}`] = { checks: r.checks||[], relatorio: r.relatorio||'' };
+  });
+}
+
+async function salvarRelatorio(clienteNome, reuniaoNum, checks, relatorio){
+  const key = `${clienteNome}_${reuniaoNum}`;
+  playbookCache[key] = { checks, relatorio };
+  await sb.from('reunioes_relatorios').upsert({
+    empresa_id: EMPRESA_ID,
+    cliente_nome: clienteNome,
+    reuniao_num: reuniaoNum,
+    checks: checks,
+    relatorio: relatorio,
+    atualizado_em: new Date().toISOString()
+  }, { onConflict: 'empresa_id,cliente_nome,reuniao_num' });
+}
+
+function toggleCheckPlaybook(clienteNome, reuniaoNum, ci, checked){
+  const key = `${clienteNome}_${reuniaoNum}`;
+  if(!playbookCache[key]) playbookCache[key] = { checks:[], relatorio:'' };
+  const checks = [...(playbookCache[key].checks||[])];
+  if(checked){ if(!checks.includes(ci)) checks.push(ci); }
+  else { const idx=checks.indexOf(ci); if(idx>-1) checks.splice(idx,1); }
+  playbookCache[key].checks = checks;
+  // atualiza visual do item
+  const lbl = document.getElementById(`pblbl_${clienteNome.replace(/\s/g,'_')}_${reuniaoNum}_${ci}`);
+  if(lbl){ lbl.style.textDecoration = checked?'line-through':'none'; lbl.style.color = checked?'var(--text3)':'var(--text2)'; }
+  // salva no supabase (debounced)
+  clearTimeout(playbookCache[key]._t);
+  playbookCache[key]._t = setTimeout(()=>{
+    salvarRelatorio(clienteNome, reuniaoNum, playbookCache[key].checks, playbookCache[key].relatorio);
+    showToast('✓ Salvo');
+  }, 800);
+}
+
+function onRelatorioChange(clienteNome, reuniaoNum, val){
+  const key = `${clienteNome}_${reuniaoNum}`;
+  if(!playbookCache[key]) playbookCache[key] = { checks:[], relatorio:'' };
+  playbookCache[key].relatorio = val;
+  clearTimeout(playbookCache[key]._t2);
+  playbookCache[key]._t2 = setTimeout(()=>{
+    salvarRelatorio(clienteNome, reuniaoNum, playbookCache[key].checks, playbookCache[key].relatorio);
+    showToast('✓ Relatório salvo');
+  }, 1000);
+}
+
+function buildReuniaoCard(c, r){
+  const rd = c.reunioes.find(x=>x.n===r.n)||{status:'pendente'};
+  const cls = rd.status==='entregue'?'r-done':rd.status==='agendado'?'r-pend':rd.status==='perdida'?'r-miss':'';
+  const pb = PLAYBOOK[r.n];
+  const cacheKey = `${c.nome}_${r.n}`;
+  const cached = playbookCache[cacheKey]||{checks:[],relatorio:''};
+  const nomeId = c.nome.replace(/\s/g,'_');
+  const checksFeitos = (cached.checks||[]).length;
+  const totalChecks = pb ? pb.perguntas.length : 0;
+  const progPct = totalChecks>0 ? Math.round((checksFeitos/totalChecks)*100) : 0;
+
+  return `<div class="reuniao-item ${cls}" id="ri_${nomeId}_${r.n}" style="cursor:pointer">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+      <div>
+        <div class="reuniao-num">REUNIÃO ${r.n} · ${r.resp}</div>
+        <div class="reuniao-titulo">${r.t}</div>
+      </div>
+      <button onclick="togglePlaybook('${c.nome}',${r.n})" style="background:none;border:none;color:var(--cyan);cursor:pointer;font-size:16px;flex-shrink:0;padding:0" title="Abrir playbook">📋</button>
+    </div>
+    ${totalChecks>0?`<div style="margin:6px 0 4px"><div style="height:2px;background:var(--border);border-radius:1px;overflow:hidden"><div style="height:100%;background:${progPct===100?'var(--green)':'var(--cyan)'};width:${progPct}%;transition:width .3s"></div></div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:3px">${checksFeitos}/${totalChecks} itens</div></div>`:''}
+    <div class="reuniao-status">
+      <select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
+        <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
+        <option value="agendado"${rd.status==='agendado'?' selected':''}>📅 Agendada</option>
+        <option value="entregue"${rd.status==='entregue'?' selected':''}>✅ Entregue</option>
+        <option value="perdida"${rd.status==='perdida'?' selected':''}>❌ Não realizada</option>
+      </select>
+    </div>
+    <!-- PLAYBOOK EXPANDÍVEL -->
+    <div id="pb_${nomeId}_${r.n}" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+      ${pb ? `
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:8px">CHECKLIST DO PLAYBOOK</div>
+      ${pb.perguntas.map((p,ci)=>{
+        const done = (cached.checks||[]).includes(ci);
+        return `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+          <input type="checkbox" id="pbck_${nomeId}_${r.n}_${ci}" ${done?'checked':''} style="margin-top:2px;accent-color:var(--cyan);flex-shrink:0;cursor:pointer"
+            onchange="toggleCheckPlaybook('${c.nome}',${r.n},${ci},this.checked)">
+          <label id="pblbl_${nomeId}_${r.n}_${ci}" for="pbck_${nomeId}_${r.n}_${ci}" style="font-size:12px;color:${done?'var(--text3)':'var(--text2)'};cursor:pointer;line-height:1.4;${done?'text-decoration:line-through':''}">
+            ${p}
+          </label>
+        </div>`;
+      }).join('')}` : ''}
+      <div style="margin-top:10px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);margin-bottom:6px">RELATÓRIO DA CALL</div>
+        <textarea
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);font-family:'Lato',sans-serif;font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:80px;transition:border-color .2s"
+          placeholder="O que foi discutido nessa call? Principais pontos, decisões, próximos passos..."
+          onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'"
+          oninput="onRelatorioChange('${c.nome}',${r.n},this.value)"
+        >${cached.relatorio||''}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+function togglePlaybook(clienteNome, reuniaoNum){
+  const nomeId = clienteNome.replace(/\s/g,'_');
+  const el = document.getElementById(`pb_${nomeId}_${reuniaoNum}`);
+  if(el) el.style.display = el.style.display==='none'?'block':'none';
+}
+
 // ══ CLIENTES ATIVOS ══
 function renderClientes(){
   const q=(document.getElementById('srchCl').value||'').toLowerCase();
@@ -1124,6 +1312,20 @@ function renderClientes(){
   document.getElementById('clientesWrap').innerHTML=lista.map(c=>{
     const done=c.reunioes.filter(r=>r.status==='entregue').length;
     const pct=Math.round((done/24)*100);
+    // carrega relatórios do Supabase para este cliente (async, silencioso)
+    carregarRelatorios(c.nome).then(()=>{
+      const wrap = document.getElementById(`clb-${c.id}`);
+      if(wrap && wrap.classList.contains('open')){
+        // re-renderiza só os cards se já estiver aberto
+        wrap.querySelectorAll('.reuniao-item').forEach(el => {
+          const n = parseInt(el.id.split('_').pop());
+          if(!isNaN(n)){
+            const r = REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===n);
+            if(r) el.outerHTML = buildReuniaoCard(c, r);
+          }
+        });
+      }
+    });
     return`<div class="cl-card">
       <div class="cl-head" onclick="toggleCliente(${c.id})">
         <div><div class="cl-nome">${c.nome}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px">${c.resp} · ${c.produto} · desde ${c.inicio||'—'}</div></div>
@@ -1134,20 +1336,7 @@ function renderClientes(){
           <div style="margin-bottom:14px">
             <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);margin-bottom:8px">${fase.fase}</div>
             <div class="reunioes-grid">
-              ${fase.items.map(r=>{
-                const rd=c.reunioes.find(x=>x.n===r.n)||{status:'pendente',entregavel:'',data:''};
-                const cls=rd.status==='entregue'?'r-done':rd.status==='agendado'?'r-pend':rd.status==='perdida'?'r-miss':'';
-                return`<div class="reuniao-item ${cls}">
-                  <div class="reuniao-num">REUNIÃO ${r.n} · ${r.resp}</div>
-                  <div class="reuniao-titulo">${r.t}</div>
-                  <div class="reuniao-status"><select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
-                    <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
-                    <option value="agendado"${rd.status==='agendado'?' selected':''}>📅 Agendada</option>
-                    <option value="entregue"${rd.status==='entregue'?' selected':''}>✅ Entregue</option>
-                    <option value="perdida"${rd.status==='perdida'?' selected':''}>❌ Não realizada</option>
-                  </select></div>
-                </div>`;
-              }).join('')}
+              ${fase.items.map(r => buildReuniaoCard(c, r)).join('')}
             </div>
           </div>`).join('')}
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
@@ -1155,7 +1344,7 @@ function renderClientes(){
           <textarea class="cl-obs-area" placeholder="Anotações sobre o cliente..." onchange="updateClienteObs(${c.id},this.value)">${c.obs||''}</textarea>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="relatorioCliente(${c.id})">📄 Relatório</button>
+          <button class="btn btn-ghost btn-sm" onclick="relatorioCliente(${c.id})">📄 Exportar Relatório</button>
           <button class="btn btn-sm btn-red" onclick="removeCliente(${c.id})">✕ Remover</button>
         </div>
       </div>
@@ -1163,7 +1352,16 @@ function renderClientes(){
   }).join('');
 }
 
-function toggleCliente(id){const el=document.getElementById('clb-'+id);el.classList.toggle('open');}
+function toggleCliente(id){
+  const el=document.getElementById('clb-'+id);
+  const isOpening = !el.classList.contains('open');
+  el.classList.toggle('open');
+  if(isOpening){
+    // carrega relatórios ao abrir
+    const c = clientesAtivos.find(x=>x.id===id);
+    if(c) carregarRelatorios(c.nome).then(()=>{ renderClientes(); });
+  }
+}
 function updateReuniao(cid,n,field,val){const c=clientesAtivos.find(x=>x.id===cid);if(!c)return;const r=c.reunioes.find(x=>x.n===n);if(r){r[field]=val;showToast('✓ Reunião atualizada');renderClientes();}}
 function updateClienteObs(cid,val){const c=clientesAtivos.find(x=>x.id===cid);if(c){c.obs=val;showToast('✓ Observação salva');}}
 function removeCliente(id){if(!confirm('Remover cliente ativo?'))return;clientesAtivos=clientesAtivos.filter(c=>c.id!==id);showToast('Cliente removido');renderClientes();}
@@ -1171,7 +1369,18 @@ function relatorioCliente(id){
   const c=clientesAtivos.find(x=>x.id===id);if(!c)return;
   const done=c.reunioes.filter(r=>r.status==='entregue');
   const pend=c.reunioes.filter(r=>r.status==='pendente');
-  const txt=`RELATÓRIO — ${c.nome}\nResponsável: ${c.resp} | Produto: ${c.produto}\nInício: ${c.inicio}\n\nPROGRESSO: ${done.length}/24 reuniões entregues (${Math.round((done.length/24)*100)}%)\n\nREUNIÕES ENTREGUES:\n${done.map(r=>`  [${r.n}] ${REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===r.n)?.t||'—'}`).join('\n')}\n\nPENDENTES: ${pend.length} reuniões\n\nOBSERVAÇÕES:\n${c.obs||'—'}`;
+  let txt=`RELATÓRIO — ${c.nome}\nResponsável: ${c.resp} | Produto: ${c.produto}\nInício: ${c.inicio}\n\nPROGRESSO: ${done.length}/24 reuniões entregues (${Math.round((done.length/24)*100)}%)\n\n`;
+  REUNIOES_PADRAO.flatMap(f=>f.items).forEach(r=>{
+    const rd=c.reunioes.find(x=>x.n===r.n)||{status:'pendente'};
+    const cached=playbookCache[`${c.nome}_${r.n}`]||{};
+    const pb=PLAYBOOK[r.n];
+    const checksFeitos=pb?(cached.checks||[]).map(ci=>pb.perguntas[ci]).filter(Boolean):[];
+    txt+=`REUNIÃO ${r.n} — ${r.t} [${rd.status.toUpperCase()}]\n`;
+    if(checksFeitos.length) txt+=`  ✓ ${checksFeitos.join('\n  ✓ ')}\n`;
+    if(cached.relatorio) txt+=`  Relatório: ${cached.relatorio}\n`;
+    txt+='\n';
+  });
+  txt+=`OBSERVAÇÕES GERAIS:\n${c.obs||'—'}`;
   const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download=`relatorio_${c.nome.replace(/\s+/g,'_')}.txt`;a.click();showToast('📄 Relatório exportado!');
 }
 
