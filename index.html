@@ -671,7 +671,23 @@ function initApp(user){
 
 async function loadTudo(){
   await Promise.all([loadLeadsFromDB(), loadClientesFromDB()]);
+  await sincronizarVendasComoClientes();
   renderAll();
+}
+
+// Qualquer lead com status 'venda' que ainda não tem cliente ativo → cria automaticamente
+async function sincronizarVendasComoClientes(){
+  const leadsVenda = leads.filter(l => l.status === 'venda');
+  for(const lead of leadsVenda){
+    const jaExiste = clientesAtivos.some(c =>
+      c.lead_id === lead.id ||
+      c.lead_id === String(lead.id) ||
+      c.nome === lead.nome
+    );
+    if(!jaExiste){
+      await criarClienteDeVenda(lead, true); // true = silencioso, sem toast
+    }
+  }
 }
 
 async function loadLeadsFromDB(){
@@ -1042,21 +1058,25 @@ async function updateLead(id,f,v){
   renderAll();
 }
 
-async function criarClienteDeVenda(lead){
+async function criarClienteDeVenda(lead, silencioso=false){
   const novoCliente={
     id:'new_'+Date.now(),
     nome: lead.nome,
     resp: lead.vendedor || 'Victor',
     produto: lead.produto || 'Escudo 21',
-    inicio: new Date().toISOString().slice(0,10),
+    inicio: lead.conexao
+      ? (lead.conexao.includes('/')?lead.conexao.split('/').reverse().join('-'):lead.conexao)
+      : new Date().toISOString().slice(0,10),
     obs: `Convertido do pipeline em ${new Date().toLocaleDateString('pt-BR')}`,
     lead_id: lead.id,
     reunioes: REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))
   };
   clientesAtivos.push(novoCliente);
   await saveClienteToDB(novoCliente);
-  showToast(`✓ ${lead.nome} adicionado em Clientes Ativos!`);
-  renderClientes();
+  if(!silencioso){
+    showToast(`✓ ${lead.nome} adicionado em Clientes Ativos!`);
+    renderClientes();
+  }
 }
 function deleteLead(id){if(!confirm('Remover lead?'))return;deleteLeadFromDB(id);leads=leads.filter(l=>l.id!==id);showToast('Removido');renderAll();}
 
