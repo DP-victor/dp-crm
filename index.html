@@ -666,8 +666,14 @@ function initApp(user){
   const em=user.email||'';
   document.getElementById('u-av').textContent=em.slice(0,2).toUpperCase();
   document.getElementById('u-name').textContent=em.split('@')[0];
-  loadLeadsFromDB();
+  loadTudo();
 }
+
+async function loadTudo(){
+  await Promise.all([loadLeadsFromDB(), loadClientesFromDB()]);
+  renderAll();
+}
+
 async function loadLeadsFromDB(){
   const {data}=await sb.from('leads').select('*').eq('empresa_id',EMPRESA_ID).order('criado_em',{ascending:true});
   if(data&&data.length){
@@ -678,9 +684,48 @@ async function loadLeadsFromDB(){
       status:l.status||'ativo', temp:l.temperatura||'',
       receita:Number(l.receita)||0, conexao:l.conexao||'', obs:l.observacoes||''
     }));
-    nextId=Math.max(...leads.map(l=>l.id))+1;
+    nextId=leads.length>0?Math.max(...leads.map(l=>typeof l.id==='number'?l.id:0))+1:1;
   }
-  renderAll();
+}
+
+async function loadClientesFromDB(){
+  const {data}=await sb.from('clientes_ativos').select('*').eq('empresa_id',EMPRESA_ID).order('criado_em',{ascending:true});
+  if(data&&data.length){
+    clientesAtivos=data.map(c=>({
+      id:c.id,
+      nome:c.nome,
+      resp:c.resp||'',
+      produto:c.produto||'',
+      inicio:c.inicio||'',
+      obs:c.obs||'',
+      lead_id:c.lead_id||null,
+      reunioes: (c.reunioes&&c.reunioes.length)
+        ? c.reunioes
+        : REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))
+    }));
+  }
+}
+
+async function saveClienteToDB(c){
+  const payload={
+    empresa_id:EMPRESA_ID,
+    nome:c.nome, resp:c.resp||'', produto:c.produto||'',
+    inicio:c.inicio||null, obs:c.obs||'',
+    reunioes:c.reunioes||[],
+    lead_id:c.lead_id||null,
+    atualizado_em:new Date().toISOString()
+  };
+  if(c.id && typeof c.id === 'string' && c.id.length>10){
+    // uuid — já existe no banco
+    await sb.from('clientes_ativos').update(payload).eq('id',c.id);
+  } else {
+    const {data}=await sb.from('clientes_ativos').insert(payload).select().single();
+    if(data) c.id=data.id;
+  }
+}
+
+async function deleteClienteFromDB(id){
+  await sb.from('clientes_ativos').delete().eq('id',id);
 }
 async function saveLeadToDB(lead){
   const etapaMap={1:'Conexão',2:'Apresentação',3:'Speech',4:'Fechamento',5:'Referido'};
@@ -744,12 +789,8 @@ let custos=[
 ];
 let nextCId=5;
 
-let clientesAtivos=[
-  {id:1,nome:"Leticia — Aceleração",resp:"Pedro",produto:"Aceleração 6 meses",inicio:"2026-01-06",obs:"Cliente muito engajada, ótima execução.",
-    reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:"pendente",entregavel:"",data:""}))
-  },
-];
-let nextCaId=2;
+let clientesAtivos=[];
+let nextCaId=1;
 
 let metas={receitaMes:80000,leadsNovos:30,vendasMes:5};
 let planoChecks={};
@@ -985,7 +1026,38 @@ function renderLeads(){
   </tr>`).join('');
 }
 
-function updateLead(id,f,v){const l=leads.find(l=>l.id===id);if(!l)return;l[f]=v;saveLeadToDB(l);showToast(`✓ ${l.nome} atualizado`);renderAll();}
+async function updateLead(id,f,v){
+  const l=leads.find(l=>l.id===id);if(!l)return;
+  const eraVenda=l.status==='venda';
+  l[f]=v;
+  saveLeadToDB(l);
+  // Se acabou de virar venda, oferece criar cliente ativo
+  if(f==='status' && v==='venda' && !eraVenda){
+    const jaCliente = clientesAtivos.some(c=>c.lead_id===l.id||c.nome===l.nome);
+    if(!jaCliente && confirm(`"${l.nome}" foi marcado como venda!\n\nDeseja criar automaticamente como Cliente Ativo?`)){
+      await criarClienteDeVenda(l);
+    }
+  }
+  showToast(`✓ ${l.nome} atualizado`);
+  renderAll();
+}
+
+async function criarClienteDeVenda(lead){
+  const novoCliente={
+    id:'new_'+Date.now(),
+    nome: lead.nome,
+    resp: lead.vendedor || 'Victor',
+    produto: lead.produto || 'Escudo 21',
+    inicio: new Date().toISOString().slice(0,10),
+    obs: `Convertido do pipeline em ${new Date().toLocaleDateString('pt-BR')}`,
+    lead_id: lead.id,
+    reunioes: REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))
+  };
+  clientesAtivos.push(novoCliente);
+  await saveClienteToDB(novoCliente);
+  showToast(`✓ ${lead.nome} adicionado em Clientes Ativos!`);
+  renderClientes();
+}
 function deleteLead(id){if(!confirm('Remover lead?'))return;deleteLeadFromDB(id);leads=leads.filter(l=>l.id!==id);showToast('Removido');renderAll();}
 
 // ══ FUNIL ══
@@ -1365,9 +1437,29 @@ function toggleCliente(id){
     });
   }
 }
-function updateReuniao(cid,n,field,val){const c=clientesAtivos.find(x=>x.id===cid);if(!c)return;const r=c.reunioes.find(x=>x.n===n);if(r){r[field]=val;showToast('✓ Reunião atualizada');renderClientes();}}
-function updateClienteObs(cid,val){const c=clientesAtivos.find(x=>x.id===cid);if(c){c.obs=val;showToast('✓ Observação salva');}}
-function removeCliente(id){if(!confirm('Remover cliente ativo?'))return;clientesAtivos=clientesAtivos.filter(c=>c.id!==id);showToast('Cliente removido');renderClientes();}
+function updateReuniao(cid,n,field,val){
+  const c=clientesAtivos.find(x=>x.id===cid);if(!c)return;
+  const r=c.reunioes.find(x=>x.n===n);
+  if(r){
+    r[field]=val;
+    saveClienteToDB(c);
+    showToast('✓ Reunião atualizada');renderClientes();
+  }
+}
+function updateClienteObs(cid,val){
+  const c=clientesAtivos.find(x=>x.id===cid);
+  if(c){
+    c.obs=val;
+    clearTimeout(c._obsT);
+    c._obsT=setTimeout(()=>{ saveClienteToDB(c); showToast('✓ Observação salva'); },1000);
+  }
+}
+async function removeCliente(id){
+  if(!confirm('Remover cliente ativo?'))return;
+  await deleteClienteFromDB(id);
+  clientesAtivos=clientesAtivos.filter(c=>c.id!==id);
+  showToast('Cliente removido');renderClientes();
+}
 function relatorioCliente(id){
   const c=clientesAtivos.find(x=>x.id===id);if(!c)return;
   const done=c.reunioes.filter(r=>r.status==='entregue');
@@ -1410,11 +1502,23 @@ function saveCusto(){
   showToast('✓ Custo adicionado!');renderFinanceiro();renderPlano();
 }
 
-function saveCliente(){
+async function saveCliente(){
   const nome=document.getElementById('mca-nome').value.trim();
   if(!nome){alert('Nome obrigatório');return;}
-  clientesAtivos.push({id:nextCaId++,nome,resp:document.getElementById('mca-resp').value,produto:document.getElementById('mca-prod').value,inicio:document.getElementById('mca-inicio').value,obs:document.getElementById('mca-obs').value,reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))});
-  closeModal('cliente');document.getElementById('mca-nome').value='';document.getElementById('mca-obs').value='';
+  const novoCliente={
+    id:'new_'+Date.now(),
+    nome,
+    resp:document.getElementById('mca-resp').value,
+    produto:document.getElementById('mca-prod').value,
+    inicio:document.getElementById('mca-inicio').value,
+    obs:document.getElementById('mca-obs').value,
+    lead_id:null,
+    reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))
+  };
+  clientesAtivos.push(novoCliente);
+  await saveClienteToDB(novoCliente);
+  closeModal('cliente');
+  document.getElementById('mca-nome').value='';document.getElementById('mca-obs').value='';
   showToast('✓ Cliente ativo adicionado!');renderClientes();
 }
 
