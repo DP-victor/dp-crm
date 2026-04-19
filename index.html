@@ -1391,11 +1391,13 @@ function relatorioCliente(id){
 function openModal(type){document.getElementById('modal'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('open');}
 function closeModal(type){document.getElementById('modal'+type.charAt(0).toUpperCase()+type.slice(1)).classList.remove('open');}
 
-function saveLead(){
+async function saveLead(){
   const nome=document.getElementById('ml-nome').value.trim();
   if(!nome){alert('Nome obrigatório');return;}
   const lead={nome,tel:document.getElementById('ml-tel').value,origem:document.getElementById('ml-origem').value,vendedor:document.getElementById('ml-vend').value,prospectador:document.getElementById('ml-prosp').value,produto:document.getElementById('ml-prod').value,ordem:+document.getElementById('ml-etapa').value,status:document.getElementById('ml-status').value,temp:document.getElementById('ml-temp').value,receita:+document.getElementById('ml-val').value||0,conexao:document.getElementById('ml-data').value||new Date().toLocaleDateString('pt-BR'),obs:document.getElementById('ml-obs').value};
-  leads.push(lead);saveLeadToDB(lead);closeModal('lead');
+  leads.push(lead);
+  await saveLeadToDB(lead);
+  closeModal('lead');
   document.getElementById('ml-nome').value='';document.getElementById('ml-val').value='';document.getElementById('ml-obs').value='';
   showToast('✓ Lead adicionado!');renderAll();
 }
