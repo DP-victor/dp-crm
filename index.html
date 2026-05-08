@@ -487,11 +487,22 @@ tr:last-child td{border-bottom:none}
     <div class="view" id="view-diagnosticos">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
         <div>
-          <div style="font-family:var(--ft);font-size:15px;font-weight:700;margin-bottom:4px">Leads · Diagnóstico</div>
-          <div style="font-family:var(--fm);font-size:11px;color:var(--t2)">Captados via diagnostico.digitalpressure.com.br</div>
+          <div style="font-family:var(--ft);font-size:15px;font-weight:700;margin-bottom:4px">Diagnósticos Operacionais</div>
+          <div style="font-family:var(--fm);font-size:11px;color:var(--t2)">Respostas recebidas via diagnostico.digitalpressure.com.br</div>
         </div>
-        <div style="display:flex;gap:8px">
-          <select id="diag-filtro-status" class="psel" onchange="renderDiagnosticos()"><option value="">Todos</option><option value="novo">Novos</option><option value="em_contato">Em contato</option><option value="convertido">Convertidos</option></select>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="diag-filtro-status" class="psel" onchange="renderDiagnosticos()">
+            <option value="">Todos</option>
+            <option value="novo">🔵 Novos</option>
+            <option value="analisado">🟡 Analisados</option>
+            <option value="em_atendimento">🟢 Em atendimento</option>
+          </select>
+          <select id="diag-filtro-nivel" class="psel" onchange="renderDiagnosticos()">
+            <option value="">Todos os níveis</option>
+            <option value="base">Base</option>
+            <option value="intermediario">Intermediário</option>
+            <option value="avancado">Avançado</option>
+          </select>
           <button class="btn btn-g btn-sm" onclick="carregarDiagnosticos()">↺ Atualizar</button>
         </div>
       </div>
@@ -848,6 +859,8 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+
+<div class="modal" id="m-diag-detail"><div class="mbox" style="max-width:780px;max-height:92vh"><div class="mhd"><div class="mtl" id="mdiag-title">Diagnóstico</div><button class="mcl" onclick="closeM('m-diag-detail')">✕</button></div><div class="mbody" id="mdiag-body" style="padding:0"></div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -855,7 +868,7 @@ tr:last-child td{border-bottom:none}
 // SUPABASE
 // ══════════════════════════════════════════
 const {createClient}=supabase;
-const SUPABASE_KEY='sb_publishable_E3bcyQOVd-6PMqCKJFOHOA_REujRmla';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoeGxzZXN6ZWRjbm1xcXJ5dXN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTcyMDcsImV4cCI6MjA5MDYzMzIwN30.WPAltPpCyLtgp8BulahVXU8z9rzlfezhZChc-0lu-6M';
 const EMPRESA_ID='11111111-1111-1111-1111-111111111111';
 const sb=createClient('https://chxlseszedcnmqqryusz.supabase.co',SUPABASE_KEY);
 
@@ -1258,56 +1271,180 @@ function renderVendedores(){
 }
 
 // ══════════════════════════════════════════
-// DIAGNÓSTICOS
+// DIAGNÓSTICOS — tabela: diagnosticos_clientes
 // ══════════════════════════════════════════
+let diagClientes=[];
+
 async function carregarDiagnosticos(){
-  document.getElementById('diag-lista').innerHTML='<div class="empty"><div class="empty-ic">◎</div><div class="empty-tx">Carregando...</div></div>';
-  const{data,error}=await sb.from('leads_diagnostico').select('*').order('created_at',{ascending:false});
-  if(error){document.getElementById('diag-lista').innerHTML=`<div class="empty"><div class="empty-ic">⚠</div><div class="empty-tx">Erro: ${error.message}</div></div>`;return;}
-  diagLeads=data||[];
+  const lista=document.getElementById('diag-lista');
+  if(lista)lista.innerHTML='<div class="empty"><div class="empty-ic">◎</div><div class="empty-tx">Carregando...</div></div>';
+  const{data,error}=await sb.from('diagnosticos_clientes').select('*').eq('empresa_id',EMPRESA_ID).order('created_at',{ascending:false});
+  if(error){if(lista)lista.innerHTML=`<div class="empty"><div class="empty-ic">⚠</div><div class="empty-tx">Erro: ${error.message}</div></div>`;return;}
+  diagClientes=data||[];
   renderDiagnosticos();
 }
+
 function renderDiagnosticos(){
-  const filtroStatus=document.getElementById('diag-filtro-status')?.value||'';
-  const lista=filtroStatus?diagLeads.filter(l=>l.status===filtroStatus):diagLeads;
-  const total=diagLeads.length;
-  const novos=diagLeads.filter(l=>l.status==='novo').length;
-  const emContato=diagLeads.filter(l=>l.status==='em_contato').length;
-  const convertidos=diagLeads.filter(l=>l.status==='convertido').length;
+  const fSt=document.getElementById('diag-filtro-status')?.value||'';
+  const fNv=document.getElementById('diag-filtro-nivel')?.value||'';
+  let lista=diagClientes;
+  if(fSt)lista=lista.filter(d=>d.status===fSt);
+  if(fNv)lista=lista.filter(d=>d.nivel===fNv);
+
+  const total=diagClientes.length;
+  const novos=diagClientes.filter(d=>d.status==='novo').length;
+  const atend=diagClientes.filter(d=>d.status==='em_atendimento').length;
+  const avgScore=total>0?Math.round(diagClientes.reduce((s,d)=>s+(d.score||0),0)/total):0;
+
   document.getElementById('diag-kpis').innerHTML=[
-    {l:'Total Recebidos',v:total,kc:'var(--c)'},{l:'Novos',v:novos,kc:'var(--y)'},
-    {l:'Em Contato',v:emContato,kc:'var(--o)'},{l:'Convertidos',v:convertidos,kc:'var(--g)'},
+    {l:'Total Recebidos',v:total,kc:'var(--c)'},
+    {l:'Aguardando Análise',v:novos,kc:'var(--y)'},
+    {l:'Em Atendimento',v:atend,kc:'var(--g)'},
+    {l:'Score Médio',v:avgScore,kc:'var(--o)'},
   ].map((c,i)=>`<div class="kpi" style="--kc:${c.kc};animation-delay:${i*.06}s"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div></div>`).join('');
-  if(!lista.length){document.getElementById('diag-lista').innerHTML='<div class="empty"><div class="empty-ic">◎</div><div class="empty-tx">Nenhum lead</div></div>';return;}
-  document.getElementById('diag-lista').innerHTML=lista.map(l=>{
-    const nivelCor=l.nivel==='critico'?'var(--r)':l.nivel==='atencao'?'var(--y)':'var(--c)';
-    const nivelBg=l.nivel==='critico'?'rgba(240,72,85,.12)':l.nivel==='atencao'?'rgba(245,184,0,.12)':'rgba(0,212,255,.1)';
-    const dt=new Date(l.created_at).toLocaleDateString('pt-BR')+' '+new Date(l.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    const statusLabel={novo:'Novo',em_contato:'Em contato',convertido:'Convertido'}[l.status]||l.status;
-    const jaConvertido=l.status==='convertido';
-    const wppNum=(l.whatsapp||'').replace(/\D/g,'');
-    const wppLink=`https://wa.me/55${wppNum}?text=${encodeURIComponent('Olá '+(l.nome||'').split(' ')[0]+'! Vi que você preencheu o diagnóstico da Digital Pressure. Posso conversar sobre sua operação?')}`;
-    return`<div class="diag-card">
-      <div style="flex:1">
-        <div class="diag-nm">${l.nome||'(sem nome)'}</div>
-        <div class="diag-fat">💰 ${l.faturamento||'—'}</div>
-        <div class="diag-meta">📱 ${l.whatsapp||'—'} · 🏥 ${l.segmento||'—'}</div>
-        <div class="diag-meta">🎯 ${l.objetivo||'—'}</div>
-        <div class="diag-data">${dt}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:160px">
-        <span class="diag-nivel" style="background:${nivelBg};color:${nivelCor};border:.5px solid ${nivelCor}">${l.nivel_label||l.nivel||'—'}</span>
-        <span style="font-size:10px;color:var(--t3);font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase">${statusLabel}</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-          <a href="${wppLink}" target="_blank" class="btn btn-p btn-xs">📱 WhatsApp</a>
-          ${!jaConvertido?`<button class="btn btn-g btn-xs" onclick="marcarEmContato('${l.id}')">Em contato</button>`:''}
-          ${!jaConvertido?`<button class="btn btn-grn btn-xs" onclick="converterParaKanban('${l.id}','${(l.nome||'').replace(/'/g,"\\'")}','${l.whatsapp||''}','${l.faturamento||''}','${l.segmento||''}','${(l.objetivo||'').replace(/'/g,"\\'")}','${l.nivel||''}')">→ Converter</button>`:'<span style="font-size:10px;color:var(--g);font-family:var(--fm)">✓ No Kanban</span>'}
+
+  if(!lista.length){
+    document.getElementById('diag-lista').innerHTML='<div class="empty"><div class="empty-ic">◎</div><div class="empty-tx">Nenhum diagnóstico recebido ainda.</div></div>';
+    return;
+  }
+
+  const bool=v=>v===true?`<span style="color:var(--g)">✓ Sim</span>`:v===false?`<span style="color:var(--r)">✗ Não</span>`:`<span style="color:var(--t3)">—</span>`;
+  const row=(lbl,val)=>val?`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--b1)"><span style="font-family:var(--fm);font-size:10px;letter-spacing:1px;color:var(--t3);min-width:170px;flex-shrink:0">${lbl}</span><span style="font-size:12px;color:var(--t2);flex:1">${val}</span></div>`:'';
+
+  document.getElementById('diag-lista').innerHTML=lista.map(d=>{
+    const dt=new Date(d.created_at).toLocaleDateString('pt-BR')+' '+new Date(d.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const score=d.score||0;
+    const scoreCor=score>=70?'var(--g)':score>=45?'var(--y)':'var(--o)';
+    const nivelLabel={base:'BASE',intermediario:'INTERMEDIÁRIO',avancado:'AVANÇADO'}[d.nivel]||d.nivel||'—';
+    const nivelCor=d.nivel==='avancado'?'var(--g)':d.nivel==='intermediario'?'var(--y)':'var(--c)';
+    const nivelBg=d.nivel==='avancado'?'rgba(16,217,138,.12)':d.nivel==='intermediario'?'rgba(245,184,0,.12)':'rgba(0,212,255,.1)';
+    const wppNum=(d.whatsapp||'').replace(/\D/g,'');
+    const wppLink=`https://wa.me/55${wppNum}?text=${encodeURIComponent('Olá '+(d.nome_responsavel||'').split(' ')[0]+'! Vi que você preencheu o diagnóstico da Digital Pressure. Posso conversar?')}`;
+
+    return`<div class="diag-card" id="dc-${d.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="flex:1">
+          <div class="diag-nm">${d.nome_responsavel||'(sem nome)'}</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:6px">${d.cargo_responsavel||''} ${d.cargo_responsavel&&d.segmento?'·':''} ${d.segmento||''}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--t2);margin-bottom:8px">
+            <span>📱 ${d.whatsapp||'—'}</span>
+            <span style="font-family:var(--fm);font-size:10px;color:var(--t3)">${dt}</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span class="diag-nivel" style="background:${nivelBg};color:${nivelCor};border:.5px solid ${nivelCor}">${nivelLabel}</span>
+            <select class="es" style="font-size:10px;padding:3px 8px;width:auto" onchange="updDiagStatus('${d.id}',this.value)">
+              <option value="novo"${d.status==='novo'?' selected':''}>🔵 Novo</option>
+              <option value="analisado"${d.status==='analisado'?' selected':''}>🟡 Analisado</option>
+              <option value="em_atendimento"${d.status==='em_atendimento'?' selected':''}>🟢 Em atendimento</option>
+            </select>
+          </div>
         </div>
+        <div style="text-align:center;background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:14px 18px;min-width:100px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:4px">SCORE</div>
+          <div style="font-family:var(--ft);font-size:36px;font-weight:800;color:${scoreCor};line-height:1">${score}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">/99</div>
+          <div style="height:3px;background:var(--s3);border-radius:2px;margin-top:8px;overflow:hidden"><div style="height:100%;background:${scoreCor};width:${score}%"></div></div>
+        </div>
+      </div>
+
+      ${d.diagnostico_resumo?`<div style="background:rgba(0,212,255,.04);border-left:2px solid var(--c);padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.6">${d.diagnostico_resumo}</div>`:''}
+
+      <button onclick="toggleDiagDetalhes('${d.id}')" style="background:none;border:1px solid var(--b1);border-radius:6px;color:var(--t2);font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:5px 14px;cursor:pointer;margin-bottom:10px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--c)'" onmouseout="this.style.borderColor='var(--b1)'">📋 VER RESPOSTAS COMPLETAS ▾</button>
+
+      <div id="dd-${d.id}" style="display:none">
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">01 · IDENTIFICAÇÃO</div>
+          ${row('Produto principal',d.principal_produto)}
+          ${row('Diferencial percebido',d.diferencial_percebido)}
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">02 · NÚMEROS ATUAIS</div>
+          ${row('Faturamento atual',`<strong style="color:var(--c)">${d.faturamento_atual||'—'}</strong>`)}
+          ${row('Ticket médio',`<strong style="color:var(--c)">${d.ticket_medio||'—'}</strong>`)}
+          ${row('Clientes ativos',d.num_clientes_ativos)}
+          ${row('Ciclo de venda',d.ciclo_venda)}
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">03 · CAPTAÇÃO</div>
+          ${row('Canal principal',d.canal_aquisicao)}
+          ${row('Dependência de indicação',d.dependencia_indicacao)}
+          ${row('Já prospectou ativamente',bool(d.ja_prospectou_ativamente))}
+          ${d.experiencia_prospeccao?row('Experiência c/ prospecção',d.experiencia_prospeccao):''}
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">04 · ESTRUTURA COMERCIAL</div>
+          ${row('Tem vendedor dedicado',bool(d.tem_vendedor))}
+          ${d.num_vendedores?row('Nº vendedores',d.num_vendedores):''}
+          ${row('Usa CRM',bool(d.usa_crm))}
+          ${d.qual_crm?row('Qual CRM',d.qual_crm):''}
+          ${row('Tem script de venda',bool(d.tem_script_venda))}
+          ${row('Tem meta mensal',bool(d.tem_meta_mensal))}
+          ${d.meta_mensal_valor?row('Meta mensal',`<strong style="color:var(--g)">${d.meta_mensal_valor}</strong>`):''}
+          ${row('Processo de prospecção',d.processo_prospeccao)}
+          ${row('Taxa de conversão estimada',d.taxa_conversao_estimada)}
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">05 · GARGALOS E EXPECTATIVAS</div>
+          ${row('Maior obstáculo',`<strong style="color:var(--y)">${d.maior_obstaculo||'—'}</strong>`)}
+          ${row('Onde perde mais vendas',d.onde_perde_venda)}
+          ${row('Meta 90 dias',d.meta_faturamento_90d?`<strong style="color:var(--g)">${d.meta_faturamento_90d}</strong>`:'—')}
+          ${row('O que espera da DP',d.principal_expectativa)}
+          ${row('Disponibilidade/semana',d.disponibilidade_implementacao)}
+        </div>
+        ${d.score_breakdown&&Object.keys(d.score_breakdown).length?`
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b1)">SCORE BREAKDOWN</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">
+            ${Object.entries(d.score_breakdown).map(([k,v])=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px;text-align:center"><div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:4px;text-transform:uppercase">${k}</div><div style="font-family:var(--ft);font-size:20px;font-weight:800;color:var(--c)">${v}</div></div>`).join('')}
+          </div>
+        </div>`:''}
+        <div style="margin-top:8px">
+          <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:6px">NOTA INTERNA</div>
+          <textarea style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t2);font-family:var(--ff);font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:60px;transition:border-color .2s" placeholder="Observações internas sobre este cliente..." onfocus="this.style.borderColor='var(--c)'" onblur="this.style.borderColor='var(--b1)'" onchange="salvarNotaDiag('${d.id}',this.value)">${d.nota_interna||''}</textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--b1)">
+        <a href="${wppLink}" target="_blank" class="btn btn-p btn-xs">📱 WhatsApp</a>
+        <button class="btn btn-g btn-xs" onclick="converterDiagParaCliente('${d.id}')">→ Criar Cliente Ativo</button>
+        <button class="btn btn-r btn-xs" onclick="deletarDiag('${d.id}')">✕</button>
       </div>
     </div>`;
   }).join('');
 }
-async function marcarEmContato(diagId){await sb.from('leads_diagnostico').update({status:'em_contato'}).eq('id',diagId);toast('✓ Marcado como em contato');carregarDiagnosticos();}
+
+function toggleDiagDetalhes(id){
+  const el=document.getElementById('dd-'+id);if(!el)return;
+  const abrir=el.style.display==='none';
+  el.style.display=abrir?'block':'none';
+  const btn=el.previousElementSibling;
+  if(btn)btn.textContent=abrir?'📋 OCULTAR RESPOSTAS ▴':'📋 VER RESPOSTAS COMPLETAS ▾';
+}
+async function updDiagStatus(id,status){
+  await sb.from('diagnosticos_clientes').update({status,atualizado_em:new Date().toISOString()}).eq('id',id);
+  diagClientes=diagClientes.map(d=>d.id===id?{...d,status}:d);
+  toast('✓ Status atualizado');
+}
+async function salvarNotaDiag(id,nota){
+  await sb.from('diagnosticos_clientes').update({nota_interna:nota,atualizado_em:new Date().toISOString()}).eq('id',id);
+  toast('✓ Nota salva');
+}
+async function deletarDiag(id){
+  if(!confirm('Remover diagnóstico?'))return;
+  await sb.from('diagnosticos_clientes').delete().eq('id',id);
+  diagClientes=diagClientes.filter(d=>d.id!==id);
+  toast('Removido');renderDiagnosticos();
+}
+async function converterDiagParaCliente(id){
+  const d=diagClientes.find(x=>x.id===id);if(!d)return;
+  if(!confirm(`Criar "${d.nome_responsavel}" como Cliente Ativo?`))return;
+  const novo={id:null,nome:d.nome_responsavel,resp:'Victor',produto:'Escudo 21',inicio:new Date().toISOString().slice(0,10),obs:`Diag · Fat: ${d.faturamento_atual||'—'} · ${d.segmento||'—'} · Score: ${d.score||0} · Gargalo: ${d.maior_obstaculo||'—'}`,reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))};
+  await saveClienteToDB(novo);clientesAtivos.push(novo);
+  await updDiagStatus(id,'em_atendimento');
+  toast(`✓ ${d.nome_responsavel} adicionado como cliente ativo!`);renderClientes();
+}
+
+
 async function converterParaKanban(diagId,nome,whatsapp,faturamento,segmento,objetivo,nivel){
   if(!confirm(`Converter "${nome}" para o Kanban?`))return;
   const novoLead={empresa_id:EMPRESA_ID,nome,telefone:whatsapp||null,origem:'Diagnóstico',vendedor:'',produto:'Escudo 21',etapa:'Conexão',status:'ativo',temperatura:nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',receita:0,conexao:new Date().toISOString().slice(0,10),observacoes:`Diagnóstico · Fat: ${faturamento} · ${segmento} · ${objetivo}`,atualizado_em:new Date().toISOString()};
@@ -2077,6 +2214,161 @@ function openEmpresaModalAdmin(){
   const plano=prompt('Plano (escudo_21 ou aceleracao_6):','escudo_21');
   sb.from('empresas').insert({nome,email_admin:email,plano:plano||'escudo_21'}).then(()=>{toast('✓ Empresa cadastrada!');renderEmpresasAdmin();});
 }
+
+function abrirDiagDetalhe(id) {
+  const d = diagClientes.find(x => x.id === id);
+  if (!d) return;
+
+  document.getElementById('mdiag-title').textContent = `Diagnóstico — ${d.nome_responsavel || '—'}`;
+  document.getElementById('mdiag-body').innerHTML = gerarHTMLDiagDetalhe(d);
+  openM('m-diag-detail');
+}
+
+function gerarHTMLDiagDetalhe(d) {
+  const score = d.score || 0;
+  const scoreCor = score >= 70 ? '#10D98A' : score >= 45 ? '#F5B800' : '#FF6A2F';
+  const nivelLabel = { base: 'BASE', intermediario: 'INTERMEDIÁRIO', avancado: 'AVANÇADO' }[d.nivel] || d.nivel || '—';
+  const nivelCor = d.nivel === 'avancado' ? '#10D98A' : d.nivel === 'intermediario' ? '#F5B800' : '#00D4FF';
+  const dt = new Date(d.created_at).toLocaleDateString('pt-BR') + ' às ' + new Date(d.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const wppNum = (d.whatsapp || '').replace(/\D/g, '');
+  const wppMsg = encodeURIComponent(`Olá ${(d.nome_responsavel || '').split(' ')[0]}! Aqui é da Digital Pressure. Vi que você preencheu nosso diagnóstico. Quero conversar sobre como podemos ajudar. Tem um momento?`);
+  const bool = v => v === true ? `<span style="color:#10D98A;font-weight:600">✓ Sim</span>` : v === false ? `<span style="color:#F04855;font-weight:600">✗ Não</span>` : `<span style="color:#3A5870">—</span>`;
+  const row = (lbl, val) => val ? `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #1E3048"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:#3A5870;min-width:180px;flex-shrink:0;padding-top:2px">${lbl}</span><span style="font-size:13px;color:#7A9BB8;flex:1;line-height:1.5">${val}</span></div>` : '';
+
+  // Score breakdown
+  const bk = d.score_breakdown || {};
+  const bkHtml = Object.keys(bk).length ? `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:20px">
+      ${Object.entries(bk).map(([k, v]) => `
+        <div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 8px;text-align:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${k}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#00D4FF">${v}</div>
+          <div style="height:2px;background:#1E3048;border-radius:2px;margin-top:6px;overflow:hidden">
+            <div style="height:100%;background:linear-gradient(90deg,#00D4FF,#00F5C8);width:${Math.min((v / 35) * 100, 100)}%;border-radius:2px"></div>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  // Análise automática
+  const alertas = [];
+  const oportunidades = [];
+  if (!d.usa_crm) oportunidades.push({ icon: '✦', txt: 'Sem CRM — implementação imediata de pipeline e acompanhamento de leads.' });
+  if (!d.tem_script_venda) oportunidades.push({ icon: '✦', txt: 'Sem script de venda — estruturar abordagem aumenta conversão diretamente.' });
+  if (!d.tem_meta_mensal) oportunidades.push({ icon: '✦', txt: 'Sem meta mensal definida — clareza de número direciona o time comercial.' });
+  if (d.processo_prospeccao && d.processo_prospeccao.toLowerCase().includes('espero')) alertas.push({ icon: '⚠', txt: 'Prospecção 100% passiva — dependência total de entrada orgânica.' });
+  if (d.dependencia_indicacao && parseInt(d.dependencia_indicacao) >= 60) alertas.push({ icon: '⚠', txt: `Dependência de indicação: ${d.dependencia_indicacao} das vendas — risco operacional alto.` });
+  if (d.onde_perde_venda && d.onde_perde_venda.toLowerCase().includes('follow')) alertas.push({ icon: '⚠', txt: 'Perde vendas no follow-up — gargalo imediato e de fácil resolução.' });
+  if (!d.ja_prospectou_ativamente) alertas.push({ icon: '⚠', txt: 'Nunca prospectou ativamente — campo verde para o Método Pressure.' });
+
+  return `
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;background:#05080C;color:#E8F1FA;min-height:400px">
+
+    <!-- HEADER -->
+    <div style="background:linear-gradient(135deg,#0a1520,#0e1d2e);border-bottom:1px solid #1E3048;padding:24px 24px 20px;position:relative">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${scoreCor},#00D4FF)"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;margin-bottom:6px">Digital Pressure · Diagnóstico</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px">${d.nome_responsavel || '—'}</div>
+          <div style="font-size:13px;color:#7A9BB8;margin-bottom:10px">${d.cargo_responsavel || ''} ${d.segmento ? '· ' + d.segmento : ''}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid rgba(0,212,255,.3);color:#00D4FF">📱 ${d.whatsapp || '—'}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;border:1px solid #1E3048;color:#3A5870">${dt}</span>
+            <span style="font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 12px;border-radius:20px;background:rgba(16,217,138,.1);color:${nivelCor};border:1px solid ${nivelCor}">${nivelLabel}</span>
+          </div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.3);border:1px solid #1E3048;border-radius:14px;padding:16px 20px;min-width:120px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:#3A5870;margin-bottom:4px">SCORE</div>
+          <div style="font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:${scoreCor};line-height:1;letter-spacing:-2px">${score}</div>
+          <div style="font-size:11px;color:#3A5870">/99</div>
+          <div style="height:3px;background:#1E3048;border-radius:2px;margin-top:8px;overflow:hidden"><div style="height:100%;background:${scoreCor};width:${score}%"></div></div>
+        </div>
+      </div>
+      ${d.diagnostico_resumo ? `<div style="margin-top:14px;background:rgba(16,217,138,.05);border-left:2px solid #10D98A;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#7A9BB8;line-height:1.6">${d.diagnostico_resumo}</div>` : ''}
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div style="padding:20px 24px">
+
+      <!-- SCORE BREAKDOWN -->
+      ${bkHtml}
+
+      <!-- SEÇÃO: NÚMEROS -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#00D4FF;border-radius:2px;display:inline-block;flex-shrink:0"></span>01 · Números Atuais</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:20px">
+        ${d.faturamento_atual ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">FATURAMENTO</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#00D4FF">${d.faturamento_atual}</div></div>` : ''}
+        ${d.ticket_medio ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">TICKET MÉDIO</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#00F5C8">${d.ticket_medio}</div></div>` : ''}
+        ${d.num_clientes_ativos ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">CLIENTES ATIVOS</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#FF6A2F">${d.num_clientes_ativos}</div></div>` : ''}
+        ${d.ciclo_venda ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">CICLO DE VENDA</div><div style="font-size:13px;font-weight:500;color:#10D98A">${d.ciclo_venda}</div></div>` : ''}
+        ${d.taxa_conversao_estimada ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">CONVERSÃO EST.</div><div style="font-size:13px;font-weight:500;color:#10D98A">${d.taxa_conversao_estimada}</div></div>` : ''}
+        ${d.meta_faturamento_90d || d.principal_expectativa ? `<div style="background:#09111A;border:1px solid #1E3048;border-radius:10px;padding:12px 14px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3A5870;margin-bottom:5px;letter-spacing:1px">META 90 DIAS</div><div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#10D98A">${d.meta_faturamento_90d || d.principal_expectativa}</div></div>` : ''}
+      </div>
+
+      <!-- SEÇÃO: PRODUTO -->
+      ${d.principal_produto || d.diferencial_percebido ? `
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#00D4FF;border-radius:2px;display:inline-block;flex-shrink:0"></span>02 · Produto & Diferencial</div>
+      <div style="margin-bottom:20px">
+        ${row('Produto / Serviço', d.principal_produto)}
+        ${d.diferencial_percebido ? `<div style="margin-top:10px;background:#09111A;border:1px solid #1E3048;border-radius:8px;padding:14px;font-size:13px;color:#7A9BB8;line-height:1.7;font-style:italic">"${d.diferencial_percebido}"</div>` : ''}
+      </div>` : ''}
+
+      <!-- SEÇÃO: CAPTAÇÃO -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#00D4FF;border-radius:2px;display:inline-block;flex-shrink:0"></span>03 · Captação de Clientes</div>
+      <div style="margin-bottom:20px">
+        ${row('Canal principal', d.canal_aquisicao)}
+        ${row('Dependência de indicação', d.dependencia_indicacao)}
+        ${row('Já prospectou ativamente', bool(d.ja_prospectou_ativamente))}
+        ${d.experiencia_prospeccao ? row('Experiência c/ prospecção', d.experiencia_prospeccao) : ''}
+        ${row('Processo de prospecção', d.processo_prospeccao)}
+      </div>
+
+      <!-- SEÇÃO: ESTRUTURA -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#00D4FF;border-radius:2px;display:inline-block;flex-shrink:0"></span>04 · Estrutura Comercial</div>
+      <div style="margin-bottom:20px">
+        ${row('Tem vendedor dedicado', bool(d.tem_vendedor))}
+        ${d.num_vendedores ? row('Nº de vendedores', d.num_vendedores) : ''}
+        ${row('Usa CRM', bool(d.usa_crm))}
+        ${d.qual_crm ? row('Qual CRM', d.qual_crm) : ''}
+        ${row('Tem script de venda', bool(d.tem_script_venda))}
+        ${row('Tem meta mensal', bool(d.tem_meta_mensal))}
+        ${d.meta_mensal_valor ? row('Valor da meta', `<strong style="color:#10D98A">${d.meta_mensal_valor}</strong>`) : ''}
+        ${row('Taxa de conversão est.', d.taxa_conversao_estimada)}
+        ${row('Disponibilidade / semana', d.disponibilidade_implementacao)}
+      </div>
+
+      <!-- SEÇÃO: GARGALOS -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#F5B800;border-radius:2px;display:inline-block;flex-shrink:0"></span>05 · Gargalos & Expectativas</div>
+      <div style="margin-bottom:20px">
+        ${d.maior_obstaculo ? `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #1E3048"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:#3A5870;min-width:180px;flex-shrink:0;padding-top:2px">Maior obstáculo</span><span style="font-size:13px;color:#F5B800;font-weight:600;flex:1">⚡ ${d.maior_obstaculo}</span></div>` : ''}
+        ${d.onde_perde_venda ? `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #1E3048"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:#3A5870;min-width:180px;flex-shrink:0;padding-top:2px">Onde perde vendas</span><span style="font-size:13px;color:#F04855;font-weight:600;flex:1">💸 ${d.onde_perde_venda}</span></div>` : ''}
+        ${row('O que espera da DP', d.principal_expectativa)}
+      </div>
+
+      <!-- ANÁLISE DP -->
+      ${alertas.length || oportunidades.length ? `
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:#3A5870;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #1E3048;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="width:3px;height:12px;background:#10D98A;border-radius:2px;display:inline-block;flex-shrink:0"></span>06 · Análise Digital Pressure</div>
+      <div style="margin-bottom:20px">
+        ${alertas.map(a => `<div style="background:rgba(245,184,0,.05);border:1px solid rgba(245,184,0,.2);border-left:3px solid #F5B800;border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;color:#7A9BB8;line-height:1.6"><strong style="color:#F5B800">${a.icon} Atenção —</strong> ${a.txt}</div>`).join('')}
+        ${oportunidades.map(o => `<div style="background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-left:3px solid #00D4FF;border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;font-size:13px;color:#7A9BB8;line-height:1.6"><strong style="color:#00D4FF">${o.icon} Oportunidade —</strong> ${o.txt}</div>`).join('')}
+      </div>` : ''}
+
+      <!-- NOTA INTERNA -->
+      <div style="margin-bottom:20px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:#3A5870;margin-bottom:8px;text-transform:uppercase">Nota Interna</div>
+        <textarea id="nota-modal-${d.id}" style="width:100%;background:#09111A;border:1px solid #1E3048;border-radius:8px;color:#7A9BB8;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s" placeholder="Observações internas sobre este diagnóstico..." onfocus="this.style.borderColor='#00D4FF'" onblur="this.style.borderColor='#1E3048'" onchange="salvarNotaDiag('${d.id}',this.value)">${d.nota_interna || ''}</textarea>
+      </div>
+
+      <!-- AÇÕES -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:16px;border-top:1px solid #1E3048">
+        <a href="https://wa.me/55${wppNum}?text=${wppMsg}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:10px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;text-decoration:none;transition:all .2s">💬 WhatsApp</a>
+        <button onclick="converterDiagParaCliente('${d.id}');closeM('m-diag-detail')" style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.25);padding:10px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s">→ Criar Cliente Ativo</button>
+        <button onclick="closeM('m-diag-detail')" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:#3A5870;border:1px solid #1E3048;padding:10px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;margin-left:auto">Fechar</button>
+      </div>
+
+    </div>
+  </div>`;
+}
+
 
 // ══════════════════════════════════════════
 // EXPORT CSV
