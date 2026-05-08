@@ -1467,111 +1467,129 @@ async function deletarDiag(id){
   diagClientes=diagClientes.filter(d=>d.id!==id);
   toast('Removido');renderDiagnosticos();
 }
-async function gerarPlanoIA(id){
+function gerarPlanoIA(id){
   const d=diagClientes.find(x=>x.id===id);if(!d)return;
   const btn=document.getElementById('plano-btn-'+id);
   const body=document.getElementById('plano-body-'+id);
   const statusBadge=document.getElementById('plano-status-'+id);
   if(btn)btn.disabled=true;
-  if(body)body.innerHTML=`<div class="plano-loading"><div class="plano-loading-dot"></div><div class="plano-loading-dot"></div><div class="plano-loading-dot"></div><span style="font-family:var(--fm);font-size:11px;color:var(--t2);margin-left:4px">Analisando diagnóstico e montando plano...</span></div>`;
-  if(statusBadge)statusBadge.textContent='Gerando...';
 
-  const prompt=`Você é um especialista em estruturação comercial e operacional da Digital Pressure, escola de negócios focada em clínicas médicas e profissionais de saúde.
+  const ps=[];
 
-Com base nas respostas do diagnóstico abaixo, monte um Plano de Ação personalizado e prático com exatamente 5 passos priorizados. O plano deve ser direto, acionável e baseado no que a Digital Pressure entrega: estruturação comercial, script de vendas, processo de prospecção, CRM, metas, funil e operação.
-
-DADOS DO DIAGNÓSTICO:
-- Nome: ${d.nome_responsavel||'—'}
-- Cargo: ${d.cargo_responsavel||'—'}
-- Segmento: ${d.segmento||'—'}
-- Produto principal: ${d.principal_produto||'—'}
-- Diferencial percebido: ${d.diferencial_percebido||'—'}
-- Faturamento atual: ${d.faturamento_atual||'—'}
-- Ticket médio: ${d.ticket_medio||'—'}
-- Clientes ativos: ${d.num_clientes_ativos||'—'}
-- Ciclo de venda: ${d.ciclo_venda||'—'}
-- Canal de aquisição: ${d.canal_aquisicao||'—'}
-- Dependência de indicação: ${d.dependencia_indicacao||'—'}
-- Já prospectou ativamente: ${d.ja_prospectou_ativamente?'Sim':'Não'}
-- Experiência com prospecção: ${d.experiencia_prospeccao||'—'}
-- Tem vendedor dedicado: ${d.tem_vendedor?'Sim':'Não'}
-- Usa CRM: ${d.usa_crm?'Sim':'Não'}
-- Tem script de venda: ${d.tem_script_venda?'Sim':'Não'}
-- Tem meta mensal: ${d.tem_meta_mensal?'Sim':'Não'}
-- Meta mensal: ${d.meta_mensal_valor||'—'}
-- Taxa de conversão estimada: ${d.taxa_conversao_estimada||'—'}
-- Maior obstáculo: ${d.maior_obstaculo||'—'}
-- Onde perde mais vendas: ${d.onde_perde_venda||'—'}
-- Meta 90 dias: ${d.meta_faturamento_90d||'—'}
-- O que espera da DP: ${d.principal_expectativa||'—'}
-- Score: ${d.score||0}/99
-- Nível: ${d.nivel||'—'}
-- Resumo do diagnóstico: ${d.diagnostico_resumo||'—'}
-
-Retorne APENAS um JSON válido, sem markdown, sem texto fora do JSON, neste formato exato:
-{
-  "resumo": "2-3 frases resumindo o principal gargalo identificado",
-  "passos": [
-    {
-      "numero": 1,
-      "titulo": "Título curto e direto",
-      "descricao": "Descrição prática de como executar, com referência ao contexto real do cliente. 2-4 frases.",
-      "prazo": "Ex: Semana 1",
-      "impacto": "Ex: Aumentar conversão",
-      "prioridade": "alta"
-    }
-  ]
-}
-Prioridades possíveis: alta, media, baixa. Passos em ordem de prioridade decrescente.`;
-
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+  // ── GARGALO 1: sem prospecção ativa / depende de indicação ──
+  if(!d.ja_prospectou_ativamente||d.dependencia_indicacao==='alta'||d.dependencia_indicacao==='total'){
+    ps.push({
+      prioridade:'alta',prazo:'Semana 1–2',impacto:'Novos leads sem depender de indicação',
+      titulo:'Estruturar processo de prospecção ativa',
+      descricao:`${d.nome_responsavel?d.nome_responsavel.split(' ')[0]+' ainda depende':'O negócio depende'} quase exclusivamente de indicações para trazer novos clientes. Isso torna o crescimento imprevisível. O primeiro passo é montar uma lista de potenciais clientes no segmento ${d.segmento||'atual'} e iniciar contato sistemático via ligação ou WhatsApp, com cadência diária de pelo menos 5 abordagens.`
     });
-    const data=await res.json();
-    const raw=data.content?.find(b=>b.type==='text')?.text||'';
-    const clean=raw.replace(/```json|```/g,'').trim();
-    const plano=JSON.parse(clean);
-
-    const priorCor={alta:'var(--r)',media:'var(--y)',baixa:'var(--g)'};
-    const priorBg={alta:'rgba(240,72,85,.12)',media:'rgba(245,184,0,.12)',baixa:'rgba(16,217,138,.12)'};
-
-    body.innerHTML=`
-      <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:12px 15px;margin-bottom:12px">
-        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--p);margin-bottom:5px">DIAGNÓSTICO GERAL</div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.7">${plano.resumo||''}</div>
-      </div>
-      ${plano.passos.map(p=>`
-        <div class="plano-step" style="border-left-color:${priorCor[p.prioridade]||'var(--p)'}">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
-            <div style="flex:1">
-              <div class="plano-step-num">PASSO ${p.numero}</div>
-              <div class="plano-step-title">${p.titulo}</div>
-              <div class="plano-step-desc">${p.descricao}</div>
-            </div>
-          </div>
-          <div class="plano-step-tags">
-            <span class="plano-tag" style="background:${priorBg[p.prioridade]||'rgba(139,92,246,.12)'};color:${priorCor[p.prioridade]||'var(--p)'}">${(p.prioridade||'').toUpperCase()}</span>
-            ${p.prazo?`<span class="plano-tag" style="background:rgba(0,212,255,.08);color:var(--c)">📅 ${p.prazo}</span>`:''}
-            ${p.impacto?`<span class="plano-tag" style="background:rgba(16,217,138,.08);color:var(--g)">🎯 ${p.impacto}</span>`:''}
-          </div>
-        </div>`).join('')}`;
-
-    if(statusBadge){statusBadge.textContent='✓ Gerado';statusBadge.style.color='var(--g)';statusBadge.style.background='rgba(16,217,138,.12)';statusBadge.style.borderColor='rgba(16,217,138,.2)';}
-    if(btn){btn.textContent='↺ Regerar';btn.disabled=false;}
-    toast('✓ Plano de ação gerado!');
-  }catch(err){
-    body.innerHTML=`<div style="background:rgba(240,72,85,.08);border:1px solid rgba(240,72,85,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--r)">Erro ao gerar plano. Tente novamente.</div>`;
-    if(statusBadge)statusBadge.textContent='Erro';
-    if(btn){btn.disabled=false;}
-    console.error('gerarPlanoIA erro:',err);
   }
+
+  // ── GARGALO 2: sem script de venda ──
+  if(!d.tem_script_venda){
+    ps.push({
+      prioridade:'alta',prazo:'Semana 1',impacto:'Aumentar taxa de conversão',
+      titulo:'Criar e treinar script de venda estruturado',
+      descricao:`Sem um script definido, cada conversa comercial depende da inspiração do momento — o que gera inconsistência e perda de vendas evitáveis. É preciso montar um script com abertura, qualificação, apresentação de valor, quebra de objeções e fechamento, específico para o produto ${d.principal_produto||'ofertado'} no segmento ${d.segmento||'atual'}.`
+    });
+  }
+
+  // ── GARGALO 3: sem meta mensal definida ──
+  if(!d.tem_meta_mensal){
+    ps.push({
+      prioridade:'alta',prazo:'Esta semana',impacto:'Direção e foco no resultado',
+      titulo:'Definir meta mensal de faturamento e conversão',
+      descricao:`Sem meta definida, não há como saber se o negócio está crescendo ou estagnando. Defina agora uma meta de faturamento para os próximos 90 dias${d.meta_faturamento_90d?' (referência: '+d.meta_faturamento_90d+')':''}, quebre em vendas por mês, por semana e por dia, e cole em um lugar visível. A meta é o termômetro de tudo.`
+    });
+  }
+
+  // ── GARGALO 4: sem CRM ──
+  if(!d.usa_crm){
+    ps.push({
+      prioridade:'media',prazo:'Semana 2',impacto:'Visibilidade e controle do pipeline',
+      titulo:'Implementar CRM para rastrear cada lead',
+      descricao:`Sem CRM, leads quentes somem no caderno ou no WhatsApp e vendas são perdidas por falta de follow-up. Implantar um funil com as etapas: Conexão → Apresentação → Proposta → Fechamento permite saber exatamente onde cada potencial cliente está e qual é o próximo passo para fechar.`
+    });
+  }
+
+  // ── GARGALO 5: sem vendedor dedicado ──
+  if(!d.tem_vendedor){
+    ps.push({
+      prioridade:'media',prazo:'30 dias',impacto:'Escalar sem depender do dono',
+      titulo:'Separar operação de entrega da função comercial',
+      descricao:`Quando o dono é também o único vendedor, o crescimento trava. ${d.nome_responsavel?d.nome_responsavel.split(' ')[0]:' O responsável'} precisa ou contratar um vendedor dedicado ou estruturar um processo comercial tão claro que qualquer pessoa treinada consiga executar — liberando tempo para gestão e entrega de qualidade.`
+    });
+  }
+
+  // ── GARGALO 6: onde perde vendas ──
+  if(d.onde_perde_venda&&d.onde_perde_venda.length>3){
+    ps.push({
+      prioridade:'alta',prazo:'Semana 1–3',impacto:'Reduzir perda de oportunidades',
+      titulo:`Resolver o principal ponto de perda: "${d.onde_perde_venda}"`,
+      descricao:`O próprio diagnóstico identificou onde as vendas estão sendo perdidas. Esse é o ponto crítico a atacar primeiro — porque cada lead perdido aqui já custou tempo e energia para ser captado. Mapeie os últimos 5 a 10 leads perdidos nesse momento e identifique o padrão: é preço, urgência, confiança ou falta de clareza na proposta?`
+    });
+  }
+
+  // ── GARGALO 7: maior obstáculo declarado ──
+  if(d.maior_obstaculo&&d.maior_obstaculo.length>3&&ps.length<5){
+    ps.push({
+      prioridade:'media',prazo:'30–45 dias',impacto:'Remover o principal freio de crescimento',
+      titulo:`Atacar o obstáculo principal: "${d.maior_obstaculo}"`,
+      descricao:`Esse foi o maior obstáculo declarado no diagnóstico. Geralmente obstáculos desse tipo têm solução direta dentro da metodologia da Digital Pressure — seja pela estruturação do processo comercial, clareza de proposta de valor ou organização operacional. O primeiro passo é nomear exatamente o que precisa mudar e definir quem vai fazer isso e até quando.`
+    });
+  }
+
+  // ── fallback: score alto, negócio bem estruturado ──
+  if(!ps.length){
+    ps.push({
+      prioridade:'media',prazo:'30 dias',impacto:'Escalar com previsibilidade',
+      titulo:'Estruturar processo de referidos e upsell',
+      descricao:`O negócio já tem uma base comercial funcionando. O próximo nível é criar um sistema ativo de indicações — onde clientes satisfeitos indicam novos clientes de forma sistemática — e identificar oportunidades de upsell dentro da base atual. Isso gera receita com custo de aquisição próximo de zero.`
+    },{
+      prioridade:'baixa',prazo:'45–60 dias',impacto:'Previsibilidade financeira',
+      titulo:'Criar dashboard de indicadores-chave',
+      descricao:`Com o processo comercial estruturado, o próximo passo é monitorar os números certos semanalmente: leads gerados, taxa de conversão, ticket médio, receita e margem. Isso permite tomar decisões com dados ao invés de intuição e identificar desvios antes que virem problemas.`
+    });
+  }
+
+  // ordena por prioridade e limita a 5
+  const ordem={alta:0,media:1,baixa:2};
+  const top5=ps.sort((a,b)=>(ordem[a.prioridade]||1)-(ordem[b.prioridade]||1)).slice(0,5);
+
+  // ── identifica resumo do gargalo principal ──
+  const semProsp=!d.ja_prospectou_ativamente;
+  const semScript=!d.tem_script_venda;
+  const semMeta=!d.tem_meta_mensal;
+  let resumo='';
+  if(semProsp&&semScript)resumo=`${d.nome_responsavel?d.nome_responsavel.split(' ')[0]:' O negócio'} ainda não tem processo comercial estruturado: sem prospecção ativa e sem script de venda. O potencial de crescimento está travado na dependência de indicações e na inconsistência das abordagens.`;
+  else if(semProsp)resumo=`O principal gargalo é a ausência de prospecção ativa — o negócio cresce só quando alguém indica. Estruturar um processo de captação sistemático é o que vai criar previsibilidade de receita.`;
+  else if(semScript)resumo=`Leads chegam mas a conversão cai pela falta de um script estruturado. Cada vendedor improvisa, o que gera inconsistência e oportunidades perdidas que poderiam ser fechadas.`;
+  else if(semMeta)resumo=`Sem meta definida, o negócio opera sem direção clara. Definir e acompanhar metas semanais é o que transforma esforço em resultado previsível.`;
+  else resumo=`Com base nas respostas, o negócio tem estrutura básica montada. O foco agora é otimizar os pontos de maior perda e escalar com previsibilidade.`;
+
+  const priorCor={alta:'var(--r)',media:'var(--y)',baixa:'var(--g)'};
+  const priorBg={alta:'rgba(240,72,85,.12)',media:'rgba(245,184,0,.12)',baixa:'rgba(16,217,138,.12)'};
+
+  body.innerHTML=`
+    <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:12px 15px;margin-bottom:12px">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--p);margin-bottom:5px">DIAGNÓSTICO GERAL</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7">${resumo}</div>
+    </div>
+    ${top5.map((p,i)=>`
+      <div class="plano-step" style="border-left-color:${priorCor[p.prioridade]||'var(--p)'}">
+        <div class="plano-step-num">PASSO ${i+1}</div>
+        <div class="plano-step-title">${p.titulo}</div>
+        <div class="plano-step-desc">${p.descricao}</div>
+        <div class="plano-step-tags">
+          <span class="plano-tag" style="background:${priorBg[p.prioridade]};color:${priorCor[p.prioridade]}">${p.prioridade.toUpperCase()}</span>
+          ${p.prazo?`<span class="plano-tag" style="background:rgba(0,212,255,.08);color:var(--c)">📅 ${p.prazo}</span>`:''}
+          ${p.impacto?`<span class="plano-tag" style="background:rgba(16,217,138,.08);color:var(--g)">🎯 ${p.impacto}</span>`:''}
+        </div>
+      </div>`).join('')}`;
+
+  if(statusBadge){statusBadge.textContent='✓ Gerado';statusBadge.style.color='var(--g)';statusBadge.style.background='rgba(16,217,138,.12)';statusBadge.style.borderColor='rgba(16,217,138,.2)';}
+  if(btn){btn.textContent='↺ Regerar';btn.disabled=false;}
+  toast('✓ Plano de ação gerado!');
 }
 
 async function converterDiagParaCliente(id){
