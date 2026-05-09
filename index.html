@@ -853,17 +853,22 @@ tr:last-child td{border-bottom:none}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div class="fg">
             <label class="fl">Produto para o link</label>
-            <select class="fs" id="ck-produto" onchange="ckCalc()">
-              <option value="diagnostico">Diagnóstico Comercial Ativo — R$ 3.000</option>
-              <option value="motor">Mentoria Motor de Vendas — R$ 30.000</option>
-              <option value="aceleracao">Aceleração Comercial 6 meses — R$ 45.000</option>
-              <option value="clube">Clube Alta Performance Anual — R$ 120.000</option>
+            <select class="fs" id="ck-produto" onchange="ckProdutoChange()">
+              <option value="diagnostico">Diagnóstico Comercial Ativo</option>
+              <option value="motor">Mentoria Motor de Vendas — 90 Dias</option>
+              <option value="aceleracao">Aceleração Comercial — 6 Meses</option>
+              <option value="clube">Clube Alta Performance — Anual</option>
             </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Valor R$ (editável)</label>
+            <input class="fi" type="number" id="ck-valor" placeholder="0" oninput="ckCalc()" style="font-weight:700;color:var(--gold)"/>
+            <span style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px" id="ck-valor-hint">Referência: R$ 3.000</span>
           </div>
           <div class="fg">
             <label class="fl">Forma de pagamento</label>
             <select class="fs" id="ck-forma" onchange="ckFormaChange()">
-              <option value="pix">PIX (+ 5% desconto automático)</option>
+              <option value="pix">PIX</option>
               <option value="cartao">Cartão de Crédito</option>
             </select>
           </div>
@@ -872,12 +877,20 @@ tr:last-child td{border-bottom:none}
             <select class="fs" id="ck-parc" onchange="ckCalc()"></select>
           </div>
           <div class="fg">
-            <label class="fl">Desconto adicional %</label>
+            <label class="fl">Desconto %</label>
             <div style="display:flex;align-items:center;gap:8px">
               <input class="fi" type="number" id="ck-desc" min="0" placeholder="0" oninput="ckCalc()" style="flex:1"/>
               <span id="ck-desc-badge" style="font-family:var(--fm);font-size:9px;padding:3px 9px;border-radius:10px;background:rgba(0,212,255,.1);color:var(--c);white-space:nowrap">0%</span>
             </div>
-            <span style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px">Até 10% livre · acima de 10% gera alerta · PIX +5% automático</span>
+            <span style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px">Até 10% livre · acima gera alerta</span>
+          </div>
+          <div class="fg" id="ck-pix-desc-wrap" style="display:none">
+            <label class="fl">Desconto PIX %</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="fi" type="number" id="ck-pix-desc" min="0" placeholder="0" oninput="ckCalc()" style="flex:1"/>
+              <span style="font-family:var(--fm);font-size:9px;color:var(--t2)">opcional</span>
+            </div>
+            <span style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px">Desconto extra por pagamento via PIX</span>
           </div>
         </div>
 
@@ -2879,10 +2892,10 @@ function toast(msg,tp=''){const t=document.getElementById('toast');t.textContent
 // CHECKOUT INTEGRADO NO MODAL DE LEAD
 // ══════════════════════════════════════════
 const CK_PRODUTOS={
-  diagnostico:{nome:'Diagnóstico Comercial Ativo',preco:3000,max_parc:6},
-  motor:{nome:'Mentoria Motor de Vendas Ativo — 90 Dias',preco:30000,max_parc:12},
-  aceleracao:{nome:'Programa de Aceleração Comercial — 6 Meses',preco:45000,max_parc:12},
-  clube:{nome:'Clube de Alta Performance Comercial — Anual',preco:120000,max_parc:12},
+  diagnostico:{nome:'Diagnóstico Comercial Ativo',preco:3000,max_parc:6,hint:'Ref: R$ 3.000 – R$ 8.000'},
+  motor:{nome:'Mentoria Motor de Vendas Ativo — 90 Dias',preco:30000,max_parc:12,hint:'Ref: R$ 15.000 – R$ 30.000'},
+  aceleracao:{nome:'Programa de Aceleração Comercial — 6 Meses',preco:45000,max_parc:12,hint:'Ref: R$ 40.000 – R$ 60.000'},
+  clube:{nome:'Clube de Alta Performance Comercial — Anual',preco:120000,max_parc:12,hint:'Ref: R$ 80.000 – R$ 120.000'},
 };
 
 // Mostra/esconde o checkout ao mudar status para "venda"
@@ -2892,44 +2905,69 @@ document.addEventListener('change',function(e){
     if(!wrap)return;
     if(e.target.value==='venda'){
       wrap.style.display='block';
-      ckBuildParcelas();
-      ckCalc();
+      ckProdutoChange();
     } else {
       wrap.style.display='none';
     }
   }
 });
 
-// Também mostrar ao abrir modal de edição com status venda
+// Mostrar ao abrir modal de edição com status já venda
 function ckCheckShow(){
   const st=document.getElementById('ml-status');
   const wrap=document.getElementById('checkout-wrap');
   if(!st||!wrap)return;
-  if(st.value==='venda'){wrap.style.display='block';ckBuildParcelas();ckCalc();}
-  else wrap.style.display='none';
+  if(st.value==='venda'){
+    wrap.style.display='block';
+    // reseta link anterior
+    document.getElementById('ck-link-result').style.display='none';
+    const btn=document.getElementById('ck-btn-gerar');
+    if(btn){btn.style.display='block';btn.disabled=false;btn.innerHTML='✦ GERAR LINK DE PAGAMENTO';}
+    ckProdutoChange();
+  } else {
+    wrap.style.display='none';
+  }
+}
+
+function ckProdutoChange(){
+  const pid=document.getElementById('ck-produto')?.value||'diagnostico';
+  const prod=CK_PRODUTOS[pid];
+  // preenche valor com preço padrão se estiver vazio
+  const valEl=document.getElementById('ck-valor');
+  if(valEl&&!valEl.value)valEl.value=prod.preco;
+  // atualiza hint
+  const hint=document.getElementById('ck-valor-hint');
+  if(hint)hint.textContent=prod.hint;
+  ckBuildParcelas();
+  ckCalc();
 }
 
 function ckBuildParcelas(){
   const pid=document.getElementById('ck-produto')?.value||'diagnostico';
   const prod=CK_PRODUTOS[pid];
   const forma=document.getElementById('ck-forma')?.value||'pix';
+  const valor=parseFloat(document.getElementById('ck-valor')?.value)||prod.preco;
+  const desc=parseFloat(document.getElementById('ck-desc')?.value)||0;
+  const pixDesc=forma==='pix'?(parseFloat(document.getElementById('ck-pix-desc')?.value)||0):0;
+  const descTotal=desc+pixDesc;
+  const valorFinal=valor*(1-descTotal/100);
   const sel=document.getElementById('ck-parc');
   if(!sel)return;
   const max=forma==='pix'?1:prod.max_parc;
   sel.innerHTML='';
   for(let i=1;i<=max;i++){
-    const v=prod.preco/i;
-    sel.innerHTML+=`<option value="${i}">${i}x de ${R(v)}${i===1?' (à vista)':''}</option>`;
+    sel.innerHTML+=`<option value="${i}">${i}x de ${R(valorFinal/i)}${i===1?' (à vista)':''}</option>`;
   }
 }
 
 function ckFormaChange(){
   const forma=document.getElementById('ck-forma')?.value;
   const parcWrap=document.getElementById('ck-parc-wrap');
+  const pixDescWrap=document.getElementById('ck-pix-desc-wrap');
   if(parcWrap){parcWrap.style.opacity=forma==='pix'?'.4':'1';parcWrap.style.pointerEvents=forma==='pix'?'none':'auto';}
+  if(pixDescWrap)pixDescWrap.style.display=forma==='pix'?'flex':'none';
   ckBuildParcelas();
   ckCalc();
-  // reset link anterior
   document.getElementById('ck-link-result').style.display='none';
   document.getElementById('ck-btn-gerar').style.display='block';
 }
@@ -2939,10 +2977,11 @@ function ckCalc(){
   const prod=CK_PRODUTOS[pid];
   const forma=document.getElementById('ck-forma')?.value||'pix';
   const parc=forma==='pix'?1:parseInt(document.getElementById('ck-parc')?.value)||1;
+  const valor=parseFloat(document.getElementById('ck-valor')?.value)||prod.preco;
   const desc=parseFloat(document.getElementById('ck-desc')?.value)||0;
-  const pixBonus=forma==='pix'?5:0;
-  const descTotal=desc+pixBonus;
-  const valorFinal=prod.preco*(1-descTotal/100);
+  const pixDesc=forma==='pix'?(parseFloat(document.getElementById('ck-pix-desc')?.value)||0):0;
+  const descTotal=desc+pixDesc;
+  const valorFinal=valor*(1-descTotal/100);
   const valorParc=valorFinal/parc;
 
   const badge=document.getElementById('ck-desc-badge');
@@ -2950,18 +2989,23 @@ function ckCalc(){
     if(descTotal===0){badge.textContent='0%';badge.style.background='rgba(0,212,255,.1)';badge.style.color='var(--c)';}
     else if(desc<=10){badge.textContent=descTotal+'% ✓';badge.style.background='rgba(16,217,138,.12)';badge.style.color='var(--g)';}
     else if(desc<=20){badge.textContent=descTotal+'% ⚠ Alerta';badge.style.background='rgba(245,184,0,.12)';badge.style.color='var(--y)';}
-    else{badge.textContent=descTotal+'% ⚠⚠ Desconto alto';badge.style.background='rgba(240,72,85,.12)';badge.style.color='var(--r)';}
+    else{badge.textContent=descTotal+'% ⚠⚠ Alto';badge.style.background='rgba(240,72,85,.12)';badge.style.color='var(--r)';}
   }
   const pv=document.getElementById('ck-parc-val');if(pv)pv.textContent=R(valorParc);
   const tv=document.getElementById('ck-total-val');if(tv)tv.textContent=R(valorFinal);
   const dv=document.getElementById('ck-desc-val');
-  if(dv)dv.textContent=descTotal>0?'Desconto de '+descTotal+'% aplicado'+(pixBonus?(' (+5% PIX)'):''):'Sem desconto';
-
-  // atualiza select de parcelas com valor correto
+  if(dv){
+    let txt='';
+    if(descTotal>0){
+      txt='Desconto de '+descTotal+'%';
+      if(pixDesc>0)txt+=' ('+pixDesc+'% PIX)';
+    } else {txt='Sem desconto';}
+    dv.textContent=txt;
+  }
+  // atualiza parcelas com valor correto
   const sel=document.getElementById('ck-parc');
   if(sel)Array.from(sel.options).forEach((opt,i)=>{const n=i+1;opt.text=n+'x de '+R(valorFinal/n)+(n===1?' (à vista)':'');});
-
-  // também atualiza o campo ml-val com o valor calculado
+  // atualiza ml-val
   const mlVal=document.getElementById('ml-val');
   if(mlVal&&!mlVal.dataset.manual)mlVal.value=valorFinal;
 }
@@ -2971,16 +3015,15 @@ async function ckGerar(){
   const prod=CK_PRODUTOS[pid];
   const forma=document.getElementById('ck-forma')?.value||'pix';
   const parc=forma==='pix'?1:parseInt(document.getElementById('ck-parc')?.value)||1;
+  const valor=parseFloat(document.getElementById('ck-valor')?.value)||prod.preco;
   const desc=parseFloat(document.getElementById('ck-desc')?.value)||0;
-  const pixBonus=forma==='pix'?5:0;
-  const descTotal=desc+pixBonus;
-  const valorFinal=prod.preco*(1-descTotal/100);
+  const pixDesc=forma==='pix'?(parseFloat(document.getElementById('ck-pix-desc')?.value)||0):0;
+  const descTotal=desc+pixDesc;
+  const valorFinal=valor*(1-descTotal/100);
 
-  // dados do lead no modal
   const nome=document.getElementById('ml-nome')?.value||'';
-  const email=''; // leads admin não tem email no form — será vazio
   const tel=document.getElementById('ml-tel')?.value||'';
-  const closer=(document.getElementById('u-name')?.textContent||'');
+  const closer=document.getElementById('u-name')?.textContent||'';
 
   const btn=document.getElementById('ck-btn-gerar');
   btn.disabled=true;btn.innerHTML='⏳ Gerando link...';
@@ -3033,7 +3076,9 @@ function ckNovoLink(){
   const btn=document.getElementById('ck-btn-gerar');
   btn.style.display='block';btn.disabled=false;btn.innerHTML='✦ GERAR LINK DE PAGAMENTO';
   document.getElementById('ck-desc').value='';
-  ckCalc();
+  const pixDesc=document.getElementById('ck-pix-desc');if(pixDesc)pixDesc.value='';
+  document.getElementById('ck-valor').value='';
+  ckProdutoChange();
 }
 
 // ── CLOCK ──
