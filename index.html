@@ -14,7 +14,7 @@
   --s1:#09111A;--s2:#0E1A27;--s3:#132233;--s4:#1A2E42;
   --b1:#1E3048;--b2:#264060;--b3:#2E5070;
   --c:#00D4FF;--c2:#00F5C8;--c3:#0EA5E9;
-  --g:#10D98A;--r:#F04855;--y:#F5B800;--o:#FF6A2F;--p:#8B5CF6;
+  --g:#10D98A;--r:#F04855;--y:#F5B800;--o:#FF6A2F;--p:#8B5CF6;--gold:#C9A84C;--gold2:#E8C878;
   --tx:#E8F1FA;--t2:#7A9BB8;--t3:#3A5870;--t4:#1E3248;
   --sw:240px;--hh:56px;
   --ff:'Plus Jakarta Sans',sans-serif;
@@ -842,8 +842,76 @@ tr:last-child td{border-bottom:none}
           <div class="fg"><label class="fl">Data 1ª Parcela</label><input class="fi" id="ml-d1p" type="date"/></div>
         </div>
       </div>
+
+      <!-- ── CHECKOUT INTEGRADO ── -->
+      <div id="checkout-wrap" style="display:none;margin-top:16px;border-top:2px solid rgba(201,168,76,.3);padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-family:var(--fm);font-size:10px;letter-spacing:2px;color:var(--gold)">✦ GERAR LINK DE PAGAMENTO</div>
+          <span style="font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:1px">Mercado Pago · seguro</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="fg">
+            <label class="fl">Produto para o link</label>
+            <select class="fs" id="ck-produto" onchange="ckCalc()">
+              <option value="diagnostico">Diagnóstico Comercial Ativo — R$ 3.000</option>
+              <option value="motor">Mentoria Motor de Vendas — R$ 30.000</option>
+              <option value="aceleracao">Aceleração Comercial 6 meses — R$ 45.000</option>
+              <option value="clube">Clube Alta Performance Anual — R$ 120.000</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Forma de pagamento</label>
+            <select class="fs" id="ck-forma" onchange="ckFormaChange()">
+              <option value="pix">PIX (+ 5% desconto automático)</option>
+              <option value="cartao">Cartão de Crédito</option>
+            </select>
+          </div>
+          <div class="fg" id="ck-parc-wrap">
+            <label class="fl">Parcelas</label>
+            <select class="fs" id="ck-parc" onchange="ckCalc()"></select>
+          </div>
+          <div class="fg">
+            <label class="fl">Desconto adicional %</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="fi" type="number" id="ck-desc" min="0" max="15" placeholder="0" oninput="ckCalc()" style="flex:1"/>
+              <span id="ck-desc-badge" style="font-family:var(--fm);font-size:9px;padding:3px 9px;border-radius:10px;background:rgba(0,212,255,.1);color:var(--c);white-space:nowrap">0%</span>
+            </div>
+            <span style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px">Até 10% livre · acima requer aprovação</span>
+          </div>
+        </div>
+
+        <!-- Preview valor -->
+        <div id="ck-preview" style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:1px;margin-bottom:3px">VALOR DA PARCELA</div>
+            <div style="font-family:var(--ft);font-size:20px;font-weight:800;color:var(--gold)" id="ck-parc-val">R$ 0</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--fm);font-size:9px;color:var(--t3);letter-spacing:1px;margin-bottom:3px">TOTAL FINAL</div>
+            <div style="font-family:var(--fm);font-size:13px;font-weight:600;color:var(--tx)" id="ck-total-val">R$ 0</div>
+            <div style="font-family:var(--fm);font-size:10px;color:var(--t2)" id="ck-desc-val"></div>
+          </div>
+        </div>
+
+        <!-- Botão gerar + resultado -->
+        <div id="ck-link-result" style="display:none;background:rgba(16,217,138,.06);border:1px solid rgba(16,217,138,.25);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+          <div style="font-family:var(--fm);font-size:9px;color:var(--g);letter-spacing:1px;margin-bottom:6px">✓ LINK GERADO</div>
+          <div id="ck-link-url" onclick="ckCopiar()" style="font-family:var(--fm);font-size:11px;color:var(--c);word-break:break-all;cursor:pointer;padding:8px 10px;background:var(--s2);border-radius:6px;border:1px solid var(--b1);margin-bottom:8px" title="Clique para copiar">—</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-g btn-xs" onclick="ckCopiar()">📋 Copiar</button>
+            <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="ckWhatsApp()">📱 WhatsApp</button>
+            <button class="btn btn-g btn-xs" onclick="ckNovoLink()">↺ Novo link</button>
+          </div>
+        </div>
+
+        <button class="btn btn-p" id="ck-btn-gerar" onclick="ckGerar()" style="width:100%;background:linear-gradient(135deg,#C9A84C,#E8C878);color:#000;font-weight:700;letter-spacing:1.5px">✦ GERAR LINK DE PAGAMENTO</button>
+      </div>
     </div>
-    <div class="mft"><button class="btn btn-g" onclick="closeM('m-lead')">Cancelar</button><button class="btn btn-p" onclick="saveLead()">Salvar Lead</button></div>
+    <div class="mft">
+      <button class="btn btn-g" onclick="closeM('m-lead')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveLead()">Salvar Lead</button>
+    </div>
   </div>
 </div>
 
@@ -2246,7 +2314,10 @@ function relatorioCliente(id){
 // ══════════════════════════════════════════
 // MODAIS
 // ══════════════════════════════════════════
-function openM(id){document.getElementById(id)?.classList.add('on');}
+function openM(id){
+  document.getElementById(id)?.classList.add('on');
+  if(id==='m-lead')setTimeout(ckCheckShow,50);
+}
 function closeM(id){document.getElementById(id)?.classList.remove('on');}
 
 async function saveLead(){
@@ -2798,6 +2869,167 @@ document.querySelectorAll('.modal').forEach(m=>{m.addEventListener('click',e=>{i
 
 // ── TOAST ──
 function toast(msg,tp=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(tp?' '+tp:'');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800);}
+
+// ══════════════════════════════════════════
+// CHECKOUT INTEGRADO NO MODAL DE LEAD
+// ══════════════════════════════════════════
+const CK_PRODUTOS={
+  diagnostico:{nome:'Diagnóstico Comercial Ativo',preco:3000,max_parc:6},
+  motor:{nome:'Mentoria Motor de Vendas Ativo — 90 Dias',preco:30000,max_parc:12},
+  aceleracao:{nome:'Programa de Aceleração Comercial — 6 Meses',preco:45000,max_parc:12},
+  clube:{nome:'Clube de Alta Performance Comercial — Anual',preco:120000,max_parc:12},
+};
+
+// Mostra/esconde o checkout ao mudar status para "venda"
+document.addEventListener('change',function(e){
+  if(e.target&&e.target.id==='ml-status'){
+    const wrap=document.getElementById('checkout-wrap');
+    if(!wrap)return;
+    if(e.target.value==='venda'){
+      wrap.style.display='block';
+      ckBuildParcelas();
+      ckCalc();
+    } else {
+      wrap.style.display='none';
+    }
+  }
+});
+
+// Também mostrar ao abrir modal de edição com status venda
+function ckCheckShow(){
+  const st=document.getElementById('ml-status');
+  const wrap=document.getElementById('checkout-wrap');
+  if(!st||!wrap)return;
+  if(st.value==='venda'){wrap.style.display='block';ckBuildParcelas();ckCalc();}
+  else wrap.style.display='none';
+}
+
+function ckBuildParcelas(){
+  const pid=document.getElementById('ck-produto')?.value||'diagnostico';
+  const prod=CK_PRODUTOS[pid];
+  const forma=document.getElementById('ck-forma')?.value||'pix';
+  const sel=document.getElementById('ck-parc');
+  if(!sel)return;
+  const max=forma==='pix'?1:prod.max_parc;
+  sel.innerHTML='';
+  for(let i=1;i<=max;i++){
+    const v=prod.preco/i;
+    sel.innerHTML+=`<option value="${i}">${i}x de ${R(v)}${i===1?' (à vista)':''}</option>`;
+  }
+}
+
+function ckFormaChange(){
+  const forma=document.getElementById('ck-forma')?.value;
+  const parcWrap=document.getElementById('ck-parc-wrap');
+  if(parcWrap){parcWrap.style.opacity=forma==='pix'?'.4':'1';parcWrap.style.pointerEvents=forma==='pix'?'none':'auto';}
+  ckBuildParcelas();
+  ckCalc();
+  // reset link anterior
+  document.getElementById('ck-link-result').style.display='none';
+  document.getElementById('ck-btn-gerar').style.display='block';
+}
+
+function ckCalc(){
+  const pid=document.getElementById('ck-produto')?.value||'diagnostico';
+  const prod=CK_PRODUTOS[pid];
+  const forma=document.getElementById('ck-forma')?.value||'pix';
+  const parc=forma==='pix'?1:parseInt(document.getElementById('ck-parc')?.value)||1;
+  const desc=Math.min(parseFloat(document.getElementById('ck-desc')?.value)||0,15);
+  const pixBonus=forma==='pix'?5:0;
+  const descTotal=desc+pixBonus;
+  const valorFinal=prod.preco*(1-descTotal/100);
+  const valorParc=valorFinal/parc;
+
+  const badge=document.getElementById('ck-desc-badge');
+  if(badge){
+    if(desc===0&&pixBonus===0){badge.textContent='0%';badge.style.background='rgba(0,212,255,.1)';badge.style.color='var(--c)';}
+    else if(desc<=10){badge.textContent=descTotal+'% ✓';badge.style.background='rgba(16,217,138,.12)';badge.style.color='var(--g)';}
+    else if(desc<=15){badge.textContent=descTotal+'% ⚠';badge.style.background='rgba(245,184,0,.12)';badge.style.color='var(--y)';}
+    else{badge.textContent='máx 15%';badge.style.background='rgba(240,72,85,.12)';badge.style.color='var(--r)';}
+  }
+  const pv=document.getElementById('ck-parc-val');if(pv)pv.textContent=R(valorParc);
+  const tv=document.getElementById('ck-total-val');if(tv)tv.textContent=R(valorFinal);
+  const dv=document.getElementById('ck-desc-val');
+  if(dv)dv.textContent=descTotal>0?'Desconto de '+descTotal+'% aplicado'+(pixBonus?(' (+5% PIX)'):''):'Sem desconto';
+
+  // atualiza select de parcelas com valor correto
+  const sel=document.getElementById('ck-parc');
+  if(sel)Array.from(sel.options).forEach((opt,i)=>{const n=i+1;opt.text=n+'x de '+R(valorFinal/n)+(n===1?' (à vista)':'');});
+
+  // também atualiza o campo ml-val com o valor calculado
+  const mlVal=document.getElementById('ml-val');
+  if(mlVal&&!mlVal.dataset.manual)mlVal.value=valorFinal;
+}
+
+async function ckGerar(){
+  const pid=document.getElementById('ck-produto')?.value;
+  const prod=CK_PRODUTOS[pid];
+  const forma=document.getElementById('ck-forma')?.value||'pix';
+  const parc=forma==='pix'?1:parseInt(document.getElementById('ck-parc')?.value)||1;
+  const desc=Math.min(parseFloat(document.getElementById('ck-desc')?.value)||0,15);
+  const pixBonus=forma==='pix'?5:0;
+  const descTotal=desc+pixBonus;
+  const valorFinal=prod.preco*(1-descTotal/100);
+
+  // dados do lead no modal
+  const nome=document.getElementById('ml-nome')?.value||'';
+  const email=''; // leads admin não tem email no form — será vazio
+  const tel=document.getElementById('ml-tel')?.value||'';
+  const closer=(document.getElementById('u-name')?.textContent||'');
+
+  const btn=document.getElementById('ck-btn-gerar');
+  btn.disabled=true;btn.innerHTML='⏳ Gerando link...';
+
+  try{
+    const res=await fetch('https://chxlseszedcnmqqryusz.supabase.co/functions/v1/criar-preferencia-mp',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},
+      body:JSON.stringify({
+        produto:{id:pid,nome:prod.nome,descricao:prod.nome},
+        cliente:{nome,email:email||nome.toLowerCase().replace(/\s/g,'')+'@cliente.com',doc:'',tel},
+        pagamento:{forma,parcelas:parc,valor:valorFinal,desconto:descTotal},
+        closer,
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error);
+
+    window._ckLinkAtual={link:data.link,nome,prod:prod.nome,forma,parc,valorFinal,tel};
+    document.getElementById('ck-link-url').textContent=data.link;
+    document.getElementById('ck-link-result').style.display='block';
+    btn.style.display='none';
+    toast('✓ Link gerado!');
+  }catch(err){
+    toast('Erro: '+err.message,'err');
+    btn.disabled=false;btn.innerHTML='✦ GERAR LINK DE PAGAMENTO';
+  }
+}
+
+function ckCopiar(){
+  const link=document.getElementById('ck-link-url')?.textContent||'';
+  navigator.clipboard.writeText(link).then(()=>toast('Link copiado!')).catch(()=>{
+    const el=document.getElementById('ck-link-url');
+    const r=document.createRange();r.selectNode(el);
+    window.getSelection().removeAllRanges();window.getSelection().addRange(r);
+    document.execCommand('copy');toast('Link copiado!');
+  });
+}
+
+function ckWhatsApp(){
+  const d=window._ckLinkAtual||{};
+  const parc=d.forma==='pix'?'à vista no PIX':d.parc+'x de '+R(d.valorFinal/d.parc)+' no cartão';
+  const msg=`Olá ${(d.nome||'').split(' ')[0]}! 🎯\n\nSegue o link para formalizar sua entrada no *${d.prod||'programa'}*:\n\n🔗 ${d.link}\n\n💰 Valor: *${R(d.valorFinal)}* — ${parc}\n\nQualquer dúvida estou aqui! 🚀`;
+  const tel=(d.tel||'').replace(/\D/g,'');
+  window.open('https://wa.me/'+(tel?'55'+tel:'')+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function ckNovoLink(){
+  document.getElementById('ck-link-result').style.display='none';
+  const btn=document.getElementById('ck-btn-gerar');
+  btn.style.display='block';btn.disabled=false;btn.innerHTML='✦ GERAR LINK DE PAGAMENTO';
+  document.getElementById('ck-desc').value='';
+  ckCalc();
+}
 
 // ── CLOCK ──
 setInterval(()=>{const e=document.getElementById('nowTime');if(e)e.textContent=new Date().toLocaleString('pt-BR');},1000);
