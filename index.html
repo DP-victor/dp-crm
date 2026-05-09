@@ -838,7 +838,6 @@ tr:last-child td{border-bottom:none}
         <div class="fg2">
           <div class="fg"><label class="fl">Meio de Pagamento</label><select class="fs" id="ml-meio"><option value="pix">PIX</option><option value="boleto">Boleto</option><option value="cartao_credito">Cartão Crédito</option><option value="cartao_debito">Cartão Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option></select></div>
           <div class="fg"><label class="fl">Parcelas</label><input class="fi" id="ml-parc" type="number" placeholder="1" min="1" value="1"/></div>
-          <div class="fg"><label class="fl">Taxa Maquininha %</label><input class="fi" id="ml-taxa" type="number" placeholder="0" step="0.1"/></div>
           <div class="fg"><label class="fl">Data 1ª Parcela</label><input class="fi" id="ml-d1p" type="date"/></div>
         </div>
       </div>
@@ -871,6 +870,7 @@ tr:last-child td{border-bottom:none}
               <option value="pix">PIX</option>
               <option value="cartao">Cartão de Crédito</option>
             </select>
+            <span id="ck-forma-hint" style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px;display:none">⚠ Taxas do cartão absorvidas pela DP — cliente paga o valor cheio</span>
           </div>
           <div class="fg" id="ck-parc-wrap">
             <label class="fl">Parcelas</label>
@@ -2964,8 +2964,10 @@ function ckFormaChange(){
   const forma=document.getElementById('ck-forma')?.value;
   const parcWrap=document.getElementById('ck-parc-wrap');
   const pixDescWrap=document.getElementById('ck-pix-desc-wrap');
+  const formaHint=document.getElementById('ck-forma-hint');
   if(parcWrap){parcWrap.style.opacity=forma==='pix'?'.4':'1';parcWrap.style.pointerEvents=forma==='pix'?'none':'auto';}
   if(pixDescWrap)pixDescWrap.style.display=forma==='pix'?'flex':'none';
+  if(formaHint)formaHint.style.display=forma==='cartao'?'block':'none';
   ckBuildParcelas();
   ckCalc();
   document.getElementById('ck-link-result').style.display='none';
