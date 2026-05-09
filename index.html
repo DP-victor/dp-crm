@@ -375,46 +375,169 @@ tr:last-child td{border-bottom:none}
 
     <!-- DASHBOARD -->
     <div class="view" id="view-dashboard">
-      <div class="vtabs">
-        <button class="vt on" onclick="switchDashTab('comercial',this)">COMERCIAL</button>
-        <button class="vt" onclick="switchDashTab('financeiro_dash',this)">FINANCEIRO</button>
-        <button class="vt" onclick="switchDashTab('operacional_dash',this)">OPERACIONAL</button>
-        <button class="vt" onclick="switchDashTab('rh_dash',this)">RH</button>
+      <!-- HEADER GESTÃO VISÍVEL -->
+      <div style="text-align:center;margin-bottom:20px;padding:18px 0 4px">
+        <div style="font-family:var(--ft);font-size:26px;font-weight:800;letter-spacing:4px;color:var(--tx)">GESTÃO VISÍVEL</div>
+        <div style="font-family:var(--fm);font-size:10px;letter-spacing:3px;color:var(--c);margin-top:4px">SISTEMA · <span id="dash-periodo-label">ESTE MÊS</span></div>
       </div>
-      <div class="vp on" id="dash-comercial">
-        <div class="kg g4" id="dash-com-kpis"></div>
-        <div class="grid3">
-          <div class="card"><div class="card-h"><div class="card-t">Funil de Conversão</div></div><div id="dash-com-funil"></div></div>
-          <div>
-            <div class="card"><div class="card-h"><div class="card-t">Temperatura</div></div><div id="dash-com-temp"></div></div>
-            <div class="card"><div class="card-h"><div class="card-t">Origem</div></div><div id="dash-com-origem"></div></div>
+      <!-- TABS -->
+      <div class="vtabs" style="margin-bottom:20px">
+        <button class="vt on" onclick="switchDashTab('com_op',this)">⚡ COMERCIAL + OPERACIONAL</button>
+        <button class="vt" onclick="switchDashTab('fin_rh',this)">💰 FINANCEIRO + RH</button>
+      </div>
+
+      <!-- ══ ABA 1: COMERCIAL + OPERACIONAL ══ -->
+      <div class="vp on" id="dash-com_op">
+
+        <!-- META vs REALIZADO — hero row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--c)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">META</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:var(--c)" id="dash-meta-val">R$ 0</div>
+            <div style="margin-top:10px"><input type="number" id="dash-meta-inp" placeholder="Definir meta..." style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:5px 10px;color:var(--t2);font-family:var(--fm);font-size:11px;width:100%;outline:none;text-align:center" onchange="salvarMetaDash(+this.value)"/></div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--g)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">REALIZADO</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:var(--g)" id="dash-realizado-val">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:6px" id="dash-vendas-sub">0 vendas fechadas</div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--y)" id="dash-ating-bar"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">% ATINGIDO</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;" id="dash-pct-val">0%</div>
+            <div style="margin-top:8px;height:4px;background:var(--s3);border-radius:2px;overflow:hidden"><div id="dash-pct-bar" style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--c),var(--g));transition:width .8s ease;width:0%"></div></div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--o)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">PROJEÇÃO DE FECHAMENTO</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:var(--o)" id="dash-proj-val">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:6px" id="dash-proj-sub">estimativa do mês</div>
           </div>
         </div>
-        <div class="grid2">
-          <div class="card"><div class="card-h"><div class="card-t">🏆 Ranking Closers</div><div class="badge">período</div></div><table><thead><tr><th></th><th>Closer</th><th>Vendas</th><th>Receita</th><th>Conv%</th></tr></thead><tbody id="dash-closer-tbody"></tbody></table></div>
-          <div class="card"><div class="card-h"><div class="card-t">🎯 Ranking BDR/SDR</div><div class="badge">período</div></div><table><thead><tr><th></th><th>BDR/SDR</th><th>Leads</th><th>Em Call</th><th>Vendas</th></tr></thead><tbody id="dash-bdr-tbody"></tbody></table></div>
+
+        <!-- KPIs secundários -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+          <div style="background:var(--c);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(0,0,0,.6);margin-bottom:6px">LEADS</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:#000" id="dash-leads-v">0</div>
+          </div>
+          <div style="background:var(--c);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(0,0,0,.6);margin-bottom:6px">CONVERSÃO</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:#000" id="dash-conv-v">0%</div>
+          </div>
+          <div style="background:var(--c);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(0,0,0,.6);margin-bottom:6px">TICKET</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:#000" id="dash-ticket-v">R$ 0</div>
+          </div>
+          <div style="background:var(--c);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(0,0,0,.6);margin-bottom:6px">CAC MÉDIO</div>
+            <div style="font-family:var(--ft);font-size:28px;font-weight:800;color:#000" id="dash-cac-v">—</div>
+          </div>
+        </div>
+
+        <!-- RECEITA DIÁRIA + HALL DO CAMPEÃO -->
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">📈 Receita Diária</div><div id="dash-ritmo-wrap" style="font-family:var(--fm);font-size:11px;color:var(--t2)"></div></div>
+            <div style="height:180px;position:relative"><canvas id="c-dash-diario"></canvas></div>
+          </div>
+          <div class="card" style="display:flex;flex-direction:column">
+            <div class="card-h"><div class="card-t" style="color:var(--y);font-size:14px;letter-spacing:1px">🏆 HALL DO CAMPEÃO</div></div>
+            <div id="dash-hall" style="flex:1"></div>
+          </div>
+        </div>
+
+        <!-- FUNIL + LEADS POR ETAPA + TEMPERATURA -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">🔽 Funil de Conversão</div><div class="badge" id="dash-fn-badge">—</div></div>
+            <div id="dash-funil"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">📊 Leads por Etapa</div></div>
+            <div id="dash-etapas-bars"></div>
+          </div>
+        </div>
+
+        <!-- RANKIGS + OPERACIONAL -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">🏆 Closers</div><div class="badge">período</div></div>
+            <table><thead><tr><th>#</th><th>Nome</th><th>Vendas</th><th>Receita</th></tr></thead><tbody id="dash-closer-tbody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">🎯 BDR/SDR</div><div class="badge">período</div></div>
+            <table><thead><tr><th>#</th><th>Nome</th><th>Leads</th><th>Vendas</th></tr></thead><tbody id="dash-bdr-tbody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">⚙ Operacional</div></div>
+            <div id="dash-op-resumo"></div>
+          </div>
         </div>
       </div>
-      <div class="vp" id="dash-financeiro_dash">
-        <div class="kg g4" id="dash-fin-kpis"></div>
-        <div class="grid2">
-          <div class="card"><div class="card-h"><div class="card-t">📊 DRE do Período</div></div><div id="dash-fin-dre"></div></div>
-          <div class="card"><div class="card-h"><div class="card-t">📉 Análise de Margem</div></div><div id="dash-fin-margem"></div></div>
+
+      <!-- ══ ABA 2: FINANCEIRO + RH ══ -->
+      <div class="vp" id="dash-fin_rh">
+
+        <!-- KPIs financeiros hero -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--c)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">FATURAMENTO</div>
+            <div style="font-family:var(--ft);font-size:26px;font-weight:800;color:var(--c)" id="df-fat">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:4px" id="df-fat-sub">receita bruta</div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--g)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">LUCRO LÍQUIDO</div>
+            <div style="font-family:var(--ft);font-size:26px;font-weight:800;" id="df-lucro">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:4px" id="df-lucro-sub">após impostos e custos</div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--y)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">MARGEM</div>
+            <div style="font-family:var(--ft);font-size:26px;font-weight:800;" id="df-margem">0%</div>
+            <div style="margin-top:8px;height:4px;background:var(--s3);border-radius:2px;overflow:hidden"><div id="df-margem-bar" style="height:100%;border-radius:2px;background:var(--g);width:0%;transition:width .8s ease"></div></div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--o)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">TICKET MÉDIO</div>
+            <div style="font-family:var(--ft);font-size:26px;font-weight:800;color:var(--o)" id="df-ticket">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:4px" id="df-ticket-sub">por venda fechada</div>
+          </div>
         </div>
-        <div class="card"><div class="card-h"><div class="card-t">Receita por Origem</div></div><div id="dash-fin-origem"></div></div>
-      </div>
-      <div class="vp" id="dash-operacional_dash">
-        <div class="kg g3" id="dash-op-kpis"></div>
-        <div class="grid2">
-          <div class="card"><div class="card-h"><div class="card-t">Clientes Ativos</div></div><div id="dash-op-clientes"></div></div>
-          <div class="card"><div class="card-h"><div class="card-t">Plano de Ação — Resumo</div></div><div id="dash-op-plano"></div></div>
+
+        <!-- DRE + INDICADORES + RH -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">📊 DRE Simplificado</div></div>
+            <div id="df-dre"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">📉 Indicadores Chave</div></div>
+            <div id="df-ind"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">👥 RH — Time</div></div>
+            <div id="df-rh"></div>
+          </div>
+        </div>
+
+        <!-- RECEITA POR ORIGEM + CUSTOS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="card">
+            <div class="card-h"><div class="card-t">📈 Receita por Origem</div></div>
+            <div id="df-origem"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">💸 Custos Fixos</div><div class="badge" id="df-custos-badge">—</div></div>
+            <div id="df-custos"></div>
+          </div>
         </div>
       </div>
-      <div class="vp" id="dash-rh_dash">
-        <div class="kg g3" id="dash-rh-kpis"></div>
-        <div class="card"><div class="card-h"><div class="card-t">👥 Time Ativo</div></div><div id="dash-rh-time"></div></div>
-        <div class="card"><div class="card-h"><div class="card-t">💼 Vagas Abertas</div></div><div id="dash-rh-vagas"></div></div>
-      </div>
+
     </div>
 
     <!-- OVERVIEW -->
@@ -2180,96 +2303,202 @@ async function saveCliente(){
 function switchDashTab(area,el){
   document.querySelectorAll('#view-dashboard .vt').forEach(t=>{t.style.borderBottomColor='transparent';t.classList.remove('on');});
   document.querySelectorAll('#view-dashboard .vp').forEach(p=>{p.classList.remove('on');p.style.display='none';});
-  el.classList.add('on');
-  const panel=document.getElementById('dash-'+area);
-  if(panel){panel.classList.add('on');panel.style.display='block';}
+  el.classList.add('on');el.style.borderBottomColor='var(--c)';
+  const vp=document.getElementById('dash-'+area);if(vp){vp.classList.add('on');vp.style.display='block';}
   renderDashArea(area);
 }
-function renderDashboard(){renderDashArea('comercial');}
+function renderDashboard(){renderDashArea('com_op');}
 function renderDashArea(area){
   const ls=getLeadsAtivos();
-  if(area==='comercial')renderDashComercial(ls);
-  else if(area==='financeiro_dash')renderDashFinanceiro(ls);
-  else if(area==='operacional_dash')renderDashOperacional();
-  else if(area==='rh_dash')renderDashRH();
+  if(area==='com_op')renderDashComOp(ls);
+  else if(area==='fin_rh')renderDashFinRH(ls);
 }
-function renderDashComercial(ls){
+
+// META
+let metaDash=Number(localStorage.getItem('dp_meta_dash')||0);
+function salvarMetaDash(v){metaDash=v;localStorage.setItem('dp_meta_dash',v);renderDashboard();toast('Meta salva!');}
+
+function renderDashComOp(ls){
   const vendas=ls.filter(l=>l.status==='venda');
+  const ativos=ls.filter(l=>l.status==='ativo');
+  const perdidos=ls.filter(l=>l.status==='perdido');
   const receita=vendas.reduce((s,l)=>s+Number(l.receita),0);
   const txConv=ls.length>0?((vendas.length/ls.length)*100).toFixed(1):0;
   const ticket=vendas.length>0?(receita/vendas.length):0;
-  const kpis=document.getElementById('dash-com-kpis');
-  if(kpis)kpis.innerHTML=[{l:'Total Leads',v:ls.length,sub:`${ls.filter(l=>l.status==='ativo').length} ativos`,kc:'var(--c)'},{l:'Vendas',v:vendas.length,sub:`${ls.filter(l=>l.status==='perdido').length} perdidos`,kc:'var(--g)'},{l:'Receita',v:R(receita),sub:`ticket ${R(ticket)}`,kc:'var(--o)'},{l:'Conversão',v:txConv+'%',sub:'no período',kc:'var(--y)'}].map((c,i)=>`<div class="kpi" style="--kc:${c.kc};animation-delay:${i*.06}s"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+  const cacs=vendas.filter(l=>l.cac>0);
+  const cacMed=cacs.length>0?cacs.reduce((s,l)=>s+l.cac,0)/cacs.length:0;
+  const pct=metaDash>0?Math.min((receita/metaDash)*100,999):0;
+  const proj=receita+(ativos.filter(l=>l.temp==='quente').length*ticket*.6)+(ativos.filter(l=>l.temp==='morno').length*ticket*.25);
+
+  // META inputs
+  const metaEl=document.getElementById('dash-meta-inp');
+  if(metaEl&&!metaEl.value&&metaDash>0)metaEl.value=metaDash;
+  const metaVal=document.getElementById('dash-meta-val');
+  if(metaVal)metaVal.textContent=metaDash>0?R(metaDash):'Definir →';
+  const realEl=document.getElementById('dash-realizado-val');
+  if(realEl)realEl.textContent=R(receita);
+  const subVd=document.getElementById('dash-vendas-sub');
+  if(subVd)subVd.textContent=vendas.length+' venda'+(vendas.length!==1?'s':'')+' fechada'+(vendas.length!==1?'s':'');
+  const pctColor=pct>=100?'var(--g)':pct>=60?'var(--y)':'var(--o)';
+  const pctEl=document.getElementById('dash-pct-val');
+  if(pctEl){pctEl.textContent=pct.toFixed(1)+'%';pctEl.style.color=pctColor;}
+  const pctBar=document.getElementById('dash-pct-bar');
+  if(pctBar){pctBar.style.width=Math.min(pct,100)+'%';pctBar.style.background=pct>=100?'var(--g)':pct>=60?'linear-gradient(90deg,var(--y),var(--g))':'linear-gradient(90deg,var(--c),var(--y))';}
+  const projEl=document.getElementById('dash-proj-val');
+  if(projEl)projEl.textContent=R(proj);
+  const projSub=document.getElementById('dash-proj-sub');
+  if(projSub)projSub.textContent=ativos.length+' leads ativos na conta';
+
+  // KPIs cyan
+  const lv=document.getElementById('dash-leads-v');if(lv)lv.textContent=ls.length;
+  const cv=document.getElementById('dash-conv-v');if(cv)cv.textContent=txConv+'%';
+  const tv=document.getElementById('dash-ticket-v');if(tv)tv.textContent=R(ticket);
+  const cav=document.getElementById('dash-cac-v');if(cav)cav.textContent=cacMed>0?R(cacMed):'—';
+
+  // CHART DIÁRIO
+  const hoje=new Date();
+  const de=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  const ate=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+  const dias={};let cur=new Date(de);
+  while(cur<=ate){const k=cur.toISOString().slice(0,10);dias[k]=0;cur.setDate(cur.getDate()+1);}
+  leads.filter(l=>l.status==='venda'&&l.conexao&&l.receita>0).forEach(l=>{
+    const k=l.conexao.includes('/')?l.conexao.split('/').reverse().join('-'):l.conexao;
+    if(dias[k]!==undefined)dias[k]+=Number(l.receita);
+  });
+  const labels=Object.keys(dias).map(d=>d.slice(8)+'/'+d.slice(5,7));
+  const vals=Object.values(dias);
+  const diaAtual=hoje.getDate();
+  const ritmoTotal=diaAtual>0?receita/diaAtual*Object.keys(dias).length:0;
+  const ritmoDiario=diaAtual>0?receita/diaAtual:0;
+  const ritmoEl=document.getElementById('dash-ritmo-wrap');
+  if(ritmoEl)ritmoEl.innerHTML='<span style="color:var(--t2)">Ritmo total: <strong style="color:var(--c)">'+R(ritmoTotal)+'</strong> &nbsp;·&nbsp; Ritmo diário: <strong style="color:var(--g)">'+R(ritmoDiario)+'</strong></span>';
+  if(CHARTS['c-dash-diario']){CHARTS['c-dash-diario'].destroy();delete CHARTS['c-dash-diario'];}
+  const ctx=document.getElementById('c-dash-diario')&&document.getElementById('c-dash-diario').getContext('2d');
+  if(ctx){CHARTS['c-dash-diario']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Receita',data:vals,backgroundColor:'rgba(0,212,255,.2)',borderColor:'rgba(0,212,255,.8)',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>R(d.raw)}}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#3A5870',font:{size:9},maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#3A5870',font:{size:9},callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':R(v)}}}}})}
+
+  // HALL DO CAMPEÃO
+  const closerMap={};ls.forEach(l=>{const v=l.vendedor||'—';if(!closerMap[v])closerMap[v]={vendas:0,receita:0};if(l.status==='venda'){closerMap[v].vendas++;closerMap[v].receita+=Number(l.receita);}});
+  const sorted=Object.entries(closerMap).filter(([k])=>k&&k!=='—').sort((a,b)=>b[1].receita-a[1].receita);
+  const hallEl=document.getElementById('dash-hall');
+  if(hallEl)hallEl.innerHTML=sorted.length?sorted.slice(0,3).map(([nm,d],i)=>{
+    const medal=['🥇','🥈','🥉'][i];
+    const bg=i===0?'linear-gradient(135deg,rgba(245,184,0,.15),rgba(245,184,0,.05))':'var(--s2)';
+    const bc=i===0?'rgba(245,184,0,.3)':'var(--b1)';
+    return'<div style="background:'+bg+';border:1px solid '+bc+';border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px"><div style="font-size:22px;flex-shrink:0">'+medal+'</div><div style="flex:1"><div style="font-family:var(--ft);font-size:13px;font-weight:700;color:var(--tx)">'+nm+'</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm)">'+d.vendas+' venda'+(d.vendas!==1?'s':'')+'</div></div><div style="font-family:var(--ft);font-size:15px;font-weight:800;color:'+(i===0?'var(--y)':'var(--c)')+'">'+R(d.receita)+'</div></div>';
+  }).join(''):'<div class="empty"><div class="empty-ic">🏆</div><div class="empty-tx">Sem vendas no período</div></div>';
+
+  // FUNIL
   const etapas={1:0,2:0,3:0,4:0,5:0};ls.forEach(l=>{if(l.ordem>=1&&l.ordem<=5)etapas[l.ordem]++;});
   const maxE=Math.max(...Object.values(etapas),1);
-  const funilEl=document.getElementById('dash-com-funil');
-  if(funilEl)funilEl.innerHTML=Object.entries(etapas).map(([k,v])=>`<div class="fn-row"><div class="fn-lbl">${EN[k]}</div><div class="fn-tr"><div class="fn-bar" style="width:${v>0?Math.max((v/maxE)*100,4):0}%;background:${EC[k]}"><span class="fn-txt">${v>0?v:''}</span></div></div><div class="fn-n">${v}</div></div>`).join('');
-  const temps={quente:0,morno:0,frio:0};ls.forEach(l=>{if(l.temp)temps[l.temp]=(temps[l.temp]||0)+1;});
-  const tempEl=document.getElementById('dash-com-temp');
-  if(tempEl)tempEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${[['🔥','Quente',temps.quente||0,'var(--o)'],['🌡','Morno',temps.morno||0,'var(--y)'],['❄','Frio',temps.frio||0,'var(--c3)']].map(([ic,lb,vl,cl])=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px">${ic}</div><div style="font-family:var(--ft);font-size:20px;font-weight:800;color:${cl}">${vl}</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">${lb}</div></div>`).join('')}</div>`;
-  const origens={};ls.forEach(l=>{origens[l.origem]=(origens[l.origem]||0)+1;});
-  const maxO=Math.max(...Object.values(origens),1);
-  const origEl=document.getElementById('dash-com-origem');
-  if(origEl)origEl.innerHTML=Object.entries(origens).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);margin-bottom:3px"><span>${k}</span><span style="color:var(--tx)">${v}</span></div><div style="height:3px;background:var(--s2);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--c);width:${(v/maxO)*100}%;border-radius:2px"></div></div></div>`).join('');
-  const closerMap={};ls.forEach(l=>{const v=l.vendedor||'—';if(!closerMap[v])closerMap[v]={leads:0,vendas:0,receita:0};closerMap[v].leads++;if(l.status==='venda'){closerMap[v].vendas++;closerMap[v].receita+=Number(l.receita);}});
-  const closers=Object.entries(closerMap).filter(([k])=>k&&k!=='—').sort((a,b)=>b[1].receita-a[1].receita);
+  const fnEl=document.getElementById('dash-funil');
+  const fnBadge=document.getElementById('dash-fn-badge');
+  if(fnBadge)fnBadge.textContent=ls.length+' leads';
+  if(fnEl)fnEl.innerHTML=Object.entries(etapas).map(([k,v])=>'<div class="fn-row"><div class="fn-lbl">'+EN[k]+'</div><div class="fn-tr"><div class="fn-bar" style="width:'+(v>0?Math.max((v/maxE)*100,4):0)+'%;background:'+EC[k]+'"><span class="fn-txt">'+(v>0?v:'')+'</span></div></div><div class="fn-n">'+(ls.length>0?((v/ls.length)*100).toFixed(0):0)+'%</div></div>').join('');
+
+  // ETAPAS CARDS
+  const etapaBarEl=document.getElementById('dash-etapas-bars');
+  if(etapaBarEl){
+    const grid=Object.entries(etapas).map(([k,v])=>'<div style="text-align:center;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 6px"><div style="font-family:var(--ft);font-size:22px;font-weight:800;color:'+EC[k]+'">'+v+'</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2);margin-top:4px;letter-spacing:1px">'+EN[k].toUpperCase()+'</div><div style="margin-top:8px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden"><div style="height:100%;background:'+EC[k]+';width:'+(maxE>0?(v/maxE)*100:0)+'%;border-radius:2px"></div></div></div>').join('');
+    const temps='<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--b1);margin-top:8px">'+[['🔥 Quente',ls.filter(l=>l.temp==='quente').length,'var(--o)'],['🌡 Morno',ls.filter(l=>l.temp==='morno').length,'var(--y)'],['❄ Frio',ls.filter(l=>l.temp==='frio').length,'var(--c3)'],['✗ Perdidos',perdidos.length,'var(--r)']].map(([lb,v,c])=>'<div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:'+c+'">'+v+'</div><div style="font-size:10px;color:var(--t2);font-family:var(--fm);margin-top:2px">'+lb+'</div></div>').join('')+'</div>';
+    etapaBarEl.innerHTML='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:4px">'+grid+'</div>'+temps;
+  }
+
+  // RANKING CLOSERS
   const closerEl=document.getElementById('dash-closer-tbody');
-  if(closerEl)closerEl.innerHTML=closers.length?closers.map(([nm,d],i)=>`<tr><td><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;font-family:var(--ft);font-size:11px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td><td class="tdm">${nm}</td><td style="color:var(--g);font-weight:600">${d.vendas}</td><td style="font-family:var(--fm);color:var(--c)">${d.receita>0?R(d.receita):'—'}</td><td style="color:${d.leads>0&&(d.vendas/d.leads)>.2?'var(--g)':'var(--y)'}">${d.leads>0?((d.vendas/d.leads)*100).toFixed(0):0}%</td></tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);font-family:var(--fm);font-size:11px">Sem dados no período</td></tr>';
-  const bdrMap={};ls.forEach(l=>{const p=l.prospectador;if(!p)return;if(!bdrMap[p])bdrMap[p]={total:0,emCall:0,geramVenda:0};bdrMap[p].total++;if(l.ordem>=2)bdrMap[p].emCall++;if(l.status==='venda')bdrMap[p].geramVenda++;});
-  const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].geramVenda-a[1].geramVenda);
+  if(closerEl)closerEl.innerHTML=sorted.length?sorted.map(([nm,d],i)=>'<tr><td style="color:var(--y);font-family:var(--ft);font-weight:800">#'+(i+1)+'</td><td class="tdm">'+nm+'</td><td style="color:var(--g);font-weight:600">'+d.vendas+'</td><td style="font-family:var(--fm);color:var(--c);font-size:11px">'+R(d.receita)+'</td></tr>').join(''):'<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Sem dados</td></tr>';
+
+  // RANKING BDR
+  const bdrMap={};ls.forEach(l=>{const p=l.prospectador;if(!p)return;if(!bdrMap[p])bdrMap[p]={total:0,vendas:0};bdrMap[p].total++;if(l.status==='venda')bdrMap[p].vendas++;});
+  const bdrs=Object.entries(bdrMap).sort((a,b)=>b[1].vendas-a[1].vendas);
   const bdrEl=document.getElementById('dash-bdr-tbody');
-  if(bdrEl)bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>`<tr><td><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--o),var(--y));display:flex;align-items:center;justify-content:center;font-family:var(--ft);font-size:11px;font-weight:800;color:#000">${nm.slice(0,2).toUpperCase()}</div></td><td class="tdm">${nm}</td><td style="font-family:var(--fm);color:var(--t2)">${d.total}</td><td style="font-family:var(--fm);color:var(--c)">${d.emCall}</td><td style="color:var(--g);font-weight:600">${d.geramVenda}</td></tr>`).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);font-family:var(--fm);font-size:11px">Preencha o campo BDR/SDR</td></tr>';
+  if(bdrEl)bdrEl.innerHTML=bdrs.length?bdrs.map(([nm,d],i)=>'<tr><td style="color:var(--o);font-family:var(--ft);font-weight:800">#'+(i+1)+'</td><td class="tdm">'+nm+'</td><td style="font-family:var(--fm);color:var(--t2)">'+d.total+'</td><td style="color:var(--g);font-weight:600">'+d.vendas+'</td></tr>').join(''):'<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3);font-size:11px">Preencha BDR/SDR</td></tr>';
+
+  // OPERACIONAL
+  const opEl=document.getElementById('dash-op-resumo');
+  if(opEl){
+    const entregues=clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0);
+    const pendentes=clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0);
+    const leadsQ=leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length;
+    const leadsF=leads.filter(l=>l.ordem===4&&l.status==='ativo').length;
+    opEl.innerHTML=[
+      {lb:'Clientes Ativos',v:clientesAtivos.length,c:'var(--c)'},
+      {lb:'Reuniões Entregues',v:entregues,c:'var(--g)'},
+      {lb:'Reuniões Pendentes',v:pendentes,c:'var(--y)'},
+      {lb:'Leads Quentes',v:leadsQ,c:'var(--o)'},
+      {lb:'Prontos p/ Fechar',v:leadsF,c:'var(--r)'},
+    ].map(r=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b1)"><span style="font-size:12px;color:var(--t2)">'+r.lb+'</span><span style="font-family:var(--ft);font-size:16px;font-weight:800;color:'+r.c+'">'+r.v+'</span></div>').join('');
+  }
 }
-function renderDashFinanceiro(ls){
-  const s=compute();const vendas=ls.filter(l=>l.status==='venda');const receita=vendas.reduce((x,l)=>x+Number(l.receita),0);
+
+function renderDashFinRH(ls){
+  const s=compute();
+  const tax=getTax();
   const totalCustos=custos.reduce((x,c)=>x+Number(c.valor),0);
-  const tax=getTax();const liquido=receita*(1-tax);const lucro=liquido-totalCustos;const margem=liquido>0?((lucro/liquido)*100).toFixed(1):0;
-  const kpis=document.getElementById('dash-fin-kpis');
-  if(kpis)kpis.innerHTML=[{l:'Receita Bruta',v:R(receita),kc:'var(--c)'},{l:'Receita Líquida',v:R(liquido),kc:'var(--c3)'},{l:'Total Custos',v:R(totalCustos),kc:'var(--o)'},{l:'Resultado',v:R(lucro),kc:lucro>=0?'var(--g)':'var(--r)'}].map(c=>`<div class="kpi" style="--kc:${c.kc}"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div></div>`).join('');
-  const dreEl=document.getElementById('dash-fin-dre');
+  const liq=s.receita*(1-tax);
+  const lucro=liq-totalCustos;
+  const margem=liq>0?(lucro/liq)*100:0;
+  const ticket=s.vendas>0?s.receita/s.vendas:0;
+
+  const dfFat=document.getElementById('df-fat');if(dfFat)dfFat.textContent=R(s.receita);
+  const dfFatSub=document.getElementById('df-fat-sub');if(dfFatSub)dfFatSub.textContent=s.vendas+' venda'+(s.vendas!==1?'s':'')+' · líq. '+R(liq);
+  const dfLucro=document.getElementById('df-lucro');if(dfLucro){dfLucro.textContent=R(lucro);dfLucro.style.color=lucro>=0?'var(--g)':'var(--r)';}
+  const dfLucroSub=document.getElementById('df-lucro-sub');if(dfLucroSub)dfLucroSub.textContent='após impostos e custos fixos';
+  const dfMargem=document.getElementById('df-margem');if(dfMargem){dfMargem.textContent=margem.toFixed(1)+'%';dfMargem.style.color=margem>=20?'var(--g)':margem>=0?'var(--y)':'var(--r)';}
+  const dfMargemBar=document.getElementById('df-margem-bar');if(dfMargemBar){dfMargemBar.style.width=Math.min(Math.max(margem,0),100)+'%';dfMargemBar.style.background=margem>=20?'var(--g)':'var(--y)';}
+  const dfTicket=document.getElementById('df-ticket');if(dfTicket)dfTicket.textContent=R(ticket);
+  const dfTicketSub=document.getElementById('df-ticket-sub');if(dfTicketSub)dfTicketSub.textContent='por venda fechada';
+
+  const dreEl=document.getElementById('df-dre');
   if(dreEl)dreEl.innerHTML=[
-    ['(+) Receita Bruta',receita,'neu'],
-    [`(-) Impostos ${taxRate}%`,receita*tax,'neg'],
-    ['(=) Receita Líquida',liquido,'pos'],
+    ['(+) Receita Bruta',s.receita,'neu'],
+    ['(-) Impostos '+taxRate+'%',s.receita*tax,'neg'],
+    ['(=) Receita Líquida',liq,'pos'],
     ['(-) Custos Fixos',totalCustos,'neg'],
-    ['(=) Resultado',lucro,lucro>=0?'pos':'neg'],
-    ['Margem',margem+'%',+margem>=20?'pos':'warn'],
-  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${typeof v==='number'?R(v):v}</span></div>`).join('');
-  const recOrig={};vendas.forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
-  const maxRO=Math.max(...Object.values(recOrig),1);
-  const origEl=document.getElementById('dash-fin-origem');
-  if(origEl)origEl.innerHTML=Object.keys(recOrig).length?Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:80px;font-size:11px;color:var(--t2);text-align:right;flex-shrink:0">${k}</div><div style="flex:1;height:18px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--c),var(--c2));width:${(v/maxRO)*100}%;display:flex;align-items:center;padding:0 8px"><span style="font-size:10px;font-weight:700;color:#000;font-family:var(--fm)">${R(v)}</span></div></div></div>`).join(''):'<div class="empty"><div class="empty-ic">◐</div><div class="empty-tx">Nenhuma venda</div></div>';
-  const ticket=vendas.length>0?receita/vendas.length:0;
-  const liqFrac=(1-getTax());
-  const margemEl=document.getElementById('dash-fin-margem');
-  if(margemEl)margemEl.innerHTML=[
+    ['(=) Resultado Op.',lucro,lucro>=0?'pos':'neg'],
+    ['Margem Op.',margem.toFixed(1)+'%',margem>=20?'pos':margem>=0?'warn':'neg'],
+  ].map(([l,v,c])=>'<div class="fin-row"><span class="fin-lbl">'+l+'</span><span class="fin-val '+c+'">'+(typeof v==='number'?R(v):v)+'</span></div>').join('');
+
+  const liqFrac=1-tax;
+  const be=totalCustos/(liqFrac||.01);
+  const vBE=ticket>0?Math.ceil(be/ticket):0;
+  const indEl=document.getElementById('df-ind');
+  if(indEl)indEl.innerHTML=[
     ['Ticket Médio',R(ticket),'pos'],
-    [`Margem Bruta (${Math.round(liqFrac*100)}%)`,`${Math.round(liqFrac*100)}%`,'pos'],
-    ['Ponto Equilíbrio',R(totalCustos/liqFrac),'warn'],
-    ['Vendas p/ BE',`${Math.ceil(totalCustos/liqFrac/(ticket||1))} vendas`,'warn'],
-    ['Margem Op.',margem+'%',+margem>=20?'pos':+margem>=0?'warn':'neg'],
-  ].map(([l,v,c])=>`<div class="fin-row"><span class="fin-lbl">${l}</span><span class="fin-val ${c}">${v}</span></div>`).join('');
+    ['Margem Bruta ('+Math.round(liqFrac*100)+'%)',Math.round(liqFrac*100)+'%','pos'],
+    ['Ponto de Equilíbrio',R(be),'warn'],
+    ['Vendas para BE',vBE+' vendas','warn'],
+    ['Total Leads',ls.length,'neu'],
+    ['Taxa Conversão',s.txConv+'%',+s.txConv>=20?'pos':+s.txConv>=10?'warn':'neg'],
+  ].map(([l,v,c])=>'<div class="fin-row"><span class="fin-lbl">'+l+'</span><span class="fin-val '+c+'">'+v+'</span></div>').join('');
+
+  // RH
+  const rhEl=document.getElementById('df-rh');
+  if(rhEl){
+    sb.from('colaboradores').select('*').eq('empresa_id',EMPRESA_ID).eq('status','ativo').then(({data:col})=>{
+      const at=col||[];const fo=at.reduce((s,c)=>s+Number(c.salario),0);
+      rhEl.innerHTML=at.length?'<div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b1)"><div style="text-align:center"><div style="font-family:var(--ft);font-size:22px;font-weight:800;color:var(--c)">'+at.length+'</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">ATIVOS</div></div><div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:var(--r)">'+R(fo)+'</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">FOLHA</div></div><div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:var(--y)">'+(at.length>0?R(fo/at.length):'—')+'</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">MÉDIA</div></div></div>'+at.slice(0,4).map(c=>'<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b1)"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;font-family:var(--ft);font-size:11px;font-weight:800;color:#000;flex-shrink:0">'+c.nome.slice(0,2).toUpperCase()+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx)">'+c.nome+'</div><div style="font-size:10px;color:var(--t2);font-family:var(--fm)">'+(c.cargo||'—')+'</div></div><div style="font-family:var(--fm);font-size:11px;color:var(--g)">'+R(c.salario)+'</div></div>').join('')
+      :'<div class="empty"><div class="empty-ic">⊛</div><div class="empty-tx">Sem colaboradores</div></div>';
+    });
+  }
+
+  // RECEITA POR ORIGEM
+  const recOrig={};ls.filter(l=>l.status==='venda').forEach(l=>{recOrig[l.origem]=(recOrig[l.origem]||0)+Number(l.receita);});
+  const maxRO=Math.max(...Object.values(recOrig),1);
+  const origEl=document.getElementById('df-origem');
+  if(origEl)origEl.innerHTML=Object.keys(recOrig).length?Object.entries(recOrig).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--t2)">'+k+'</span><span style="font-family:var(--fm);color:var(--tx);font-weight:600">'+R(v)+'</span></div><div style="height:16px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--c),var(--c2));width:'+(v/maxRO)*100+'%;display:flex;align-items:center;padding:0 8px;transition:width .6s ease"><span style="font-size:9px;font-weight:700;color:#000;font-family:var(--fm)">'+((v/(s.receita||1))*100).toFixed(0)+'%</span></div></div></div>').join(''):'<div class="empty"><div class="empty-ic">◐</div><div class="empty-tx">Nenhuma venda</div></div>';
+
+  // CUSTOS
+  const custosEl=document.getElementById('df-custos');
+  const custosBadge=document.getElementById('df-custos-badge');
+  if(custosBadge)custosBadge.textContent=R(totalCustos);
+  if(custosEl)custosEl.innerHTML=custos.length?custos.map(c=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1)"><div><div style="font-size:12px;color:var(--tx)">'+c.nome+'</div><span style="font-family:var(--fm);font-size:9px;padding:1px 7px;border-radius:8px;background:rgba(0,212,255,.08);color:var(--c)">'+(c.cat||'Outros')+'</span></div><div style="font-family:var(--fm);font-size:12px;font-weight:600;color:var(--r)">'+R(c.valor)+'</div></div>').join(''):'<div class="empty"><div class="empty-ic">💰</div><div class="empty-tx">Nenhum custo fixo</div></div>';
 }
-function renderDashOperacional(){
-  const kpis=document.getElementById('dash-op-kpis');
-  if(kpis)kpis.innerHTML=[{l:'Clientes Ativos',v:clientesAtivos.length,kc:'var(--c)'},{l:'Reuniões Entregues',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='entregue').length,0),kc:'var(--g)'},{l:'Reuniões Pendentes',v:clientesAtivos.reduce((s,c)=>s+c.reunioes.filter(r=>r.status==='pendente').length,0),kc:'var(--o)'}].map(c=>`<div class="kpi" style="--kc:${c.kc}"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div></div>`).join('');
-  const cl=document.getElementById('dash-op-clientes');
-  if(cl)cl.innerHTML=clientesAtivos.length?clientesAtivos.map(c=>{const done=c.reunioes.filter(r=>r.status==='entregue').length;const pct=Math.round((done/24)*100);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--b1)"><div><div style="font-size:13px;font-weight:600;color:var(--tx)">${c.nome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm)">${c.resp} · ${c.produto}</div></div><div style="text-align:right"><div style="font-family:var(--fm);font-size:11px;color:var(--c)">${done}/24</div><div class="prog" style="width:80px;margin-top:4px"><div class="prog-f" style="width:${pct}%;background:var(--c)"></div></div></div></div>`;}).join(''):'<div class="empty"><div class="empty-ic">★</div><div class="empty-tx">Nenhum cliente</div></div>';
-  const plEl=document.getElementById('dash-op-plano');
-  if(plEl){const acoes=[];if(leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>l.temp==='quente'&&l.status==='ativo').length} leads quentes`,cor:'var(--o)'});if(leads.filter(l=>!l.temp&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>!l.temp&&l.status==='ativo').length} sem temperatura`,cor:'var(--y)'});if(leads.filter(l=>l.ordem===4&&l.status==='ativo').length>0)acoes.push({titulo:`${leads.filter(l=>l.ordem===4&&l.status==='ativo').length} em Fechamento`,cor:'var(--g)'});plEl.innerHTML=acoes.length?acoes.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--b1)"><span style="font-size:12px;color:var(--tx)">${a.titulo}</span><span style="width:8px;height:8px;border-radius:50%;background:${a.cor};display:block"></span></div>`).join(''):'<div style="color:var(--g);font-size:12px;padding:12px 0">✓ Sem alertas</div>';}
-}
-async function renderDashRH(){
-  if(!colabs.length)await loadColabs();
-  const atColabs=colabs.filter(c=>c.status==='ativo');
-  const{data:vagas}=await sb.from('vagas').select('*').eq('empresa_id',EMPRESA_ID).eq('status','aberta');
-  const folha=atColabs.reduce((s,c)=>s+Number(c.salario),0);
-  const kpis=document.getElementById('dash-rh-kpis');
-  if(kpis)kpis.innerHTML=[{l:'Colaboradores',v:atColabs.length,kc:'var(--c)'},{l:'Folha Mensal',v:R(folha),kc:'var(--o)'},{l:'Vagas Abertas',v:(vagas||[]).length,kc:'var(--g)'}].map(c=>`<div class="kpi" style="--kc:${c.kc}"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div></div>`).join('');
-  const timeEl=document.getElementById('dash-rh-time');
-  if(timeEl)timeEl.innerHTML=atColabs.length?atColabs.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b1)"><div class="uav" style="width:36px;height:36px;font-size:12px;flex-shrink:0">${(c.nome||'').slice(0,2).toUpperCase()}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--tx)">${c.nome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm)">${c.cargo||'—'}</div></div><div style="font-family:var(--fm);font-size:11px;color:var(--g)">${R(c.salario||0)}</div></div>`).join(''):'<div class="empty"><div class="empty-ic">⊛</div><div class="empty-tx">Nenhum colaborador</div></div>';
-  const vagEl=document.getElementById('dash-rh-vagas');
-  if(vagEl)vagEl.innerHTML=(vagas||[]).length?(vagas||[]).map(v=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--b1)"><div style="font-size:13px;font-weight:600;color:var(--tx)">${v.titulo}</div><span class="sb sb-v">● Aberta</span></div>`).join(''):'<div class="empty"><div class="empty-ic">◑</div><div class="empty-tx">Nenhuma vaga</div></div>';
-}
+
+// compatibilidade
+function renderDashComercial(ls){renderDashComOp(ls||getLeadsAtivos());}
+function renderDashFinanceiro(ls){renderDashFinRH(ls||getLeadsAtivos());}
+function renderDashOperacional(){}
+async function renderDashRH(){}
 
 // ══════════════════════════════════════════
 // PERFORMANCE + EMPRESAS
