@@ -2356,7 +2356,7 @@ async function saveLead(){
     recorr:document.getElementById('ml-rec').value==='true',
     meio:document.getElementById('ml-meio').value||'pix',
     parc:+document.getElementById('ml-parc').value||1,
-    taxa:+document.getElementById('ml-taxa').value||0,
+    taxa:+document.getElementById('ml-taxa')?.value||0,
     d1p:toISODate(d1p)||null
   };
   const ok=await saveLeadToDB(lead);
