@@ -318,12 +318,11 @@ tr:last-child td{border-bottom:none}
     <button class="sba on" onclick="nav('overview',this)"><span class="ic">◉</span>Visão Geral</button>
     <button class="sba" onclick="nav('kanban',this)"><span class="ic">▦</span>Kanban</button>
     <button class="sba" onclick="nav('leads',this)"><span class="ic">◎</span>Leads & Pipeline</button>
-    <button class="sba" onclick="nav('funil',this)"><span class="ic">▽</span>Funil</button>
     <button class="sba" onclick="nav('vendedores',this)"><span class="ic">⊛</span>Vendedores</button>
     <div class="sbsec">Captação</div>
     <button class="sba" onclick="nav('diagnosticos',this)"><span class="ic">◎</span>Diagnósticos</button>
     <div class="sbsec">Financeiro</div>
-    <button class="sba" onclick="nav('financeiro',this)"><span class="ic">◐</span>Dashboard Financeiro</button>
+    <button class="sba" onclick="nav('financeiro',this)"><span class="ic">◐</span>SEU CFO</button>
     <button class="sba" onclick="nav('projecao',this)"><span class="ic">↗</span>Projeção & Metas</button>
     <div class="sbsec">Operacional</div>
     <button class="sba" onclick="nav('plano',this)"><span class="ic">⚡</span>Plano de Ação</button>
@@ -599,16 +598,6 @@ tr:last-child td{border-bottom:none}
       <div class="card" style="padding:0;overflow:hidden">
         <div class="card-h" style="padding:14px 18px"><div class="card-t">Pipeline Completo</div><div class="badge" id="leadsBadge">0</div></div>
         <div class="tw"><table><thead><tr><th>Cliente</th><th>Origem</th><th>Closer</th><th>BDR/SDR</th><th>Etapa</th><th>Temp</th><th>Status</th><th>Valor R$</th><th>Conexão</th><th></th></tr></thead><tbody id="leadsTbody"></tbody></table></div>
-      </div>
-    </div>
-
-    <!-- FUNIL -->
-    <div class="view" id="view-funil">
-      <div class="kg g4" id="funilKpis"></div>
-      <div class="card"><div class="card-h"><div class="card-t">Funil Detalhado</div></div><div id="funilFull"></div></div>
-      <div class="grid2">
-        <div class="card"><div class="card-h"><div class="card-t">Taxa de Passagem entre Etapas</div></div><div id="funilPass"></div></div>
-        <div class="card"><div class="card-h"><div class="card-t">Leads por Fase</div></div><div id="funilFase"></div></div>
       </div>
     </div>
 
@@ -1116,7 +1105,7 @@ async function initApp(user){
   setTimeout(async()=>{
     await loadClientesFromDB();
     await loadLeadsFromDB();
-    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs()]);
+    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs(),loadCustosFixos()]);
     fillLeadSelects();
     setDefaultOvDates();
   },0);
@@ -1264,13 +1253,8 @@ function tdToday(){return new Date().toISOString().slice(0,10);}
 
 let leads=[];
 
-let custos=[
-  {id:1,nome:"Ferramentas / Software",cat:"Software",valor:800},
-  {id:2,nome:"Marketing / Tráfego",cat:"Marketing",valor:2000},
-  {id:3,nome:"Equipe / Freelancers",cat:"Equipe",valor:3000},
-  {id:4,nome:"Escritório / Infra",cat:"Infraestrutura",valor:500},
-];
-let nextCId=5;
+let custos=[];
+let nextCId=1;
 
 const REUNIOES_PADRAO=[
   {fase:'MÊS 1',items:[{n:1,t:'Kickoff + Raio-X',resp:'Grupo'},{n:2,t:'Diagnóstico + Payback',resp:'Victor'},{n:3,t:'Implementação Financeira',resp:'Grupo'},{n:4,t:'Dashboard + Direção',resp:'Victor'}]},
@@ -1871,19 +1855,38 @@ function renderFinanceiro(){
   const ctx=document.getElementById('c-rvc')?.getContext('2d');
   if(ctx){CHARTS['c-rvc']=new Chart(ctx,{type:'bar',data:{labels:['Rec. Bruta','Rec. Líq.','Custos','Resultado'],datasets:[{data:[s.receita,s.liquido,s.totalCustos,s.lucro],backgroundColor:['rgba(0,212,255,.25)','rgba(0,245,200,.25)','rgba(255,106,47,.25)',s.lucro>=0?'rgba(16,217,138,.25)':'rgba(240,72,85,.25)'],borderColor:['#00D4FF','#00F5C8','#FF6A2F',s.lucro>=0?'#10D98A':'#F04855'],borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>R(d.raw)}}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#3A5870',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#3A5870',font:{size:10},callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':R(v)}}}}});}
 }
-function updateCusto(id,val){custos=custos.map(c=>c.id===id?{...c,valor:val}:c);renderCF();renderPlano();toast('Custo atualizado');}
-function removeCusto(id){if(!confirm('Remover custo?'))return;custos=custos.filter(c=>c.id!==id);renderCF();toast('Custo removido');}
+async function loadCustosFixos(){
+  const{data}=await sb.from('custos_cliente').select('*').eq('empresa_id',EMPRESA_ID).eq('tipo','fixo').order('criado_em',{ascending:true});
+  custos=(data||[]).map(c=>({id:c.id,nome:c.nome,cat:c.categoria||'Outros',valor:Number(c.valor)||0,_dbid:c.id}));
+  renderCF();
+}
+function updateCusto(dbid,val){
+  const c=custos.find(x=>String(x._dbid)===String(dbid));
+  if(!c)return;
+  c.valor=val;
+  sb.from('custos_cliente').update({valor:val}).eq('id',dbid);
+  renderCF();toast('Custo atualizado');
+}
+async function removeCusto(dbid){
+  if(!confirm('Remover custo?'))return;
+  await sb.from('custos_cliente').delete().eq('id',dbid);
+  custos=custos.filter(c=>String(c._dbid)!==String(dbid));
+  renderCF();toast('Custo removido');
+}
 
 function renderCF(){
   const tot=custos.reduce((s,c)=>s+Number(c.valor),0);
   const w=document.getElementById('custosWrap');
-  if(w)w.innerHTML=custos.length?custos.map(c=>`<div class="ci"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px">${c.nome}</div><span class="cp">${c.cat}</span></div><input class="fi-inp" style="width:100px" type="number" value="${c.valor}" onchange="updateCusto(${c.id},+this.value)"><button onclick="removeCusto(${c.id})" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:15px;opacity:.6;padding:0 4px">✕</button></div>`).join(''):'<div class="empty"><div class="empty-ic">💰</div><div class="empty-tx">Nenhum custo fixo</div></div>';
+  if(w)w.innerHTML=custos.length?custos.map(c=>`<div class="ci"><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px">${c.nome}</div><span class="cp">${c.cat}</span></div><input class="fi-inp" style="width:100px" type="number" value="${c.valor}" onchange="updateCusto('${c._dbid}',+this.value)"><button onclick="removeCusto('${c._dbid}')" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:15px;opacity:.6;padding:0 4px">✕</button></div>`).join(''):'<div class="empty"><div class="empty-ic">💰</div><div class="empty-tx">Nenhum custo fixo</div></div>';
   const tc=document.getElementById('totalCustos');if(tc)tc.textContent=R(tot);
 }
-function saveCusto(){
+async function saveCusto(){
   const nome=document.getElementById('mc-nome').value.trim();const val=+document.getElementById('mc-val').value;
   if(!nome||!val){alert('Preencha nome e valor');return;}
-  custos.push({id:nextCId++,nome,cat:document.getElementById('mc-cat').value,valor:val});
+  const cat=document.getElementById('mc-cat').value;
+  const{data,error}=await sb.from('custos_cliente').insert({empresa_id:EMPRESA_ID,nome,categoria:cat,valor:val,tipo:'fixo'}).select().single();
+  if(error){toast('Erro: '+error.message,'err');return;}
+  custos.push({id:data.id,nome,cat,valor:val,_dbid:data.id});
   closeM('m-custo');document.getElementById('mc-nome').value='';document.getElementById('mc-val').value='';
   toast('Custo adicionado!');renderCF();renderPlano();
 }
@@ -2048,13 +2051,80 @@ async function gerarPlanoFinIA(){
 // ══════════════════════════════════════════
 // PROJEÇÃO
 // ══════════════════════════════════════════
+function diasUteis(de,ate){
+  let count=0;let cur=new Date(de);cur.setHours(12);
+  while(cur<=ate){const d=cur.getDay();if(d!==0&&d!==6)count++;cur.setDate(cur.getDate()+1);}
+  return count;
+}
 function renderProjecao(){
   const s=compute();
-  const projMes=s.receita+(s.ativos*s.ticket*0.18);
-  document.getElementById('projKpis').innerHTML=[{l:'Receita Atual',v:R(s.receita),kc:'var(--c)'},{l:'Projeção Mês',v:R(projMes),kc:'var(--o)'},{l:'Projeção 90 Dias',v:R(projMes*3),kc:'var(--g)'}].map(c=>`<div class="kpi" style="--kc:${c.kc}"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div></div>`).join('');
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  const fimMes=new Date(hoje.getFullYear(),hoje.getMonth()+1,0,23,59,59,999);
+
+  const duPassados=diasUteis(inicioMes,hoje);
+  const duRestantes=diasUteis(hoje,fimMes);
+  const duTotal=diasUteis(inicioMes,fimMes);
+
+  // Ticket médio bruto = receita total / dias úteis passados
+  const ticketMedioBruto=duPassados>0?(s.receita/duPassados):0;
+
+  // Cenários
+  // Conservador: ticket médio x dias restantes (com base no praticado = ritmo atual)
+  const projConservador=s.receita+(ticketMedioBruto*duRestantes);
+
+  // Realista: ticket médio das vendas fechadas x dias restantes (tickets reais fechados)
+  const ticketRealVendas=s.ticket||ticketMedioBruto; // ticket médio por venda
+  const vendaMediaDia=s.vendas>0&&duPassados>0?s.vendas/duPassados:0;
+  const projRealista=s.receita+(ticketRealVendas*vendaMediaDia*duRestantes);
+
+  // Arrojado: maior ticket registrado x dias restantes
+  const maiorTicket=leads.filter(l=>l.status==='venda'&&l.receita>0).reduce((mx,l)=>Math.max(mx,Number(l.receita)),0);
+  const projArrojado=s.receita+((maiorTicket||ticketMedioBruto)*duRestantes);
+
+  // KPIs topo
+  document.getElementById('projKpis').innerHTML=[
+    {l:'Receita Atual',v:R(s.receita),kc:'var(--c)',sub:`${duPassados} dias úteis passados`},
+    {l:'Ticket Médio Bruto/Dia',v:R(ticketMedioBruto),kc:'var(--o)',sub:`base de cálculo`},
+    {l:'Dias Úteis Restantes',v:duRestantes,kc:'var(--g)',sub:`de ${duTotal} no mês`},
+    {l:'Maior Ticket',v:maiorTicket>0?R(maiorTicket):'—',kc:'var(--p)',sub:`cenário arrojado`}
+  ].map(c=>`<div class="kpi" style="--kc:${c.kc}"><div class="kpi-lbl">${c.l}</div><div class="kpi-val">${c.v}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+
+  // Metas
   const pcts=[[metas.receitaMes,'Meta Receita',s.receita,'receitaMes'],[metas.leadsNovos,'Meta Leads',s.total,'leadsNovos'],[metas.vendasMes,'Meta Vendas',s.vendas,'vendasMes']];
   document.getElementById('projMetas').innerHTML=pcts.map(([meta,lb,cur,field])=>{const pct=Math.min((cur/meta)*100,100);return`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;color:var(--t2)">${lb}</span><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--fm);font-size:11px;color:var(--tx)">${typeof cur==='number'&&cur>1000?R(cur):cur} / </span><input class="fi-inp" style="width:80px" type="number" value="${meta}" onchange="metas['${field}']=+this.value;renderProjecao();renderPlano()"></div></div><div class="prog"><div class="prog-f" style="width:${pct}%;background:${pct>=100?'var(--g)':pct>=60?'var(--y)':'var(--c)'}"></div></div><div style="text-align:right;font-family:var(--fm);font-size:10px;color:var(--t2);margin-top:3px">${pct.toFixed(0)}% da meta</div></div>`;}).join('');
-  document.getElementById('projCenarios').innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${[['Conservador',.7,'var(--r)'],['Realista',1,'var(--c)'],['Agressivo',1.4,'var(--g)']].map(([nm,m,c])=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center;border-top:3px solid ${c}"><div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t2);margin-bottom:8px">${nm.toUpperCase()}</div><div style="font-family:var(--ft);font-size:22px;font-weight:800;color:${c}">${R(metas.receitaMes*m)}</div><div style="font-size:11px;color:var(--t2);margin-top:4px">${Math.ceil(metas.vendasMes*m)} vendas/mês</div></div>`).join('')}</div>`;
+
+  // Cenários com nova lógica
+  document.getElementById('projCenarios').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center;border-top:3px solid var(--r)">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t2);margin-bottom:4px">CONSERVADOR</div>
+        <div style="font-family:var(--ft);font-size:22px;font-weight:800;color:var(--r)">${R(projConservador)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;font-family:var(--fm);line-height:1.5">Ticket médio/dia × dias úteis restantes<br>Base: ritmo atual praticado</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid rgba(0,212,255,.3);border-radius:10px;padding:16px;text-align:center;border-top:3px solid var(--c)">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t2);margin-bottom:4px">REALISTA</div>
+        <div style="font-family:var(--ft);font-size:22px;font-weight:800;color:var(--c)">${R(projRealista)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;font-family:var(--fm);line-height:1.5">Ticket médio vendas × cadência dias úteis<br>Base: tickets efetivamente fechados</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:16px;text-align:center;border-top:3px solid var(--g)">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t2);margin-bottom:4px">ARROJADO</div>
+        <div style="font-family:var(--ft);font-size:22px;font-weight:800;color:var(--g)">${R(projArrojado)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;font-family:var(--fm);line-height:1.5">Maior ticket (${R(maiorTicket||0)}) × dias úteis restantes<br>Base: melhor resultado registrado</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 14px;display:flex;gap:24px;flex-wrap:wrap">
+      <div><span style="font-family:var(--fm);font-size:9px;color:var(--t3)">DIAS ÚTEIS PASSADOS</span><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:var(--tx)">${duPassados}</div></div>
+      <div><span style="font-family:var(--fm);font-size:9px;color:var(--t3)">DIAS ÚTEIS RESTANTES</span><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:var(--c)">${duRestantes}</div></div>
+      <div><span style="font-family:var(--fm);font-size:9px;color:var(--t3)">TICKET MÉDIO BRUTO/DIA</span><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:var(--o)">${R(ticketMedioBruto)}</div></div>
+      <div><span style="font-family:var(--fm);font-size:9px;color:var(--t3)">RECEITA REALIZADA</span><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:var(--g)">${R(s.receita)}</div></div>
+    </div>`;
+  
+  // Atualiza também o card de projeção no dashboard
+  const projEl=document.getElementById('dash-proj-val');
+  if(projEl)projEl.textContent=R(projRealista);
+  const projSub=document.getElementById('dash-proj-sub');
+  if(projSub)projSub.textContent=`Cons. ${R(projConservador)} · Arroj. ${R(projArrojado)}`;
 }
 
 // ══════════════════════════════════════════
@@ -2276,34 +2346,63 @@ function renderClientes(){
   document.getElementById('clientesWrap').innerHTML=lista.map(c=>{
     const done=c.reunioes.filter(r=>r.status==='entregue').length;
     const pct=Math.round((done/24)*100);
+    const cidSafe=String(c.id).replace(/-/g,'_');
     return`<div class="cl-card">
-      <div class="cl-hd" onclick="toggleCliente(${c.id})">
-        <div><div class="cl-nm">${c.nome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm);margin-top:2px">${c.resp} · ${c.produto} · desde ${c.inicio||'—'}</div></div>
-        <div class="cl-prg"><div class="cl-prg-tx">${done}/24</div><div class="cl-prg-br"><div class="cl-prg-fi" style="width:${pct}%"></div></div><div style="font-family:var(--fm);font-size:11px;color:var(--c)">${pct}%</div></div>
+      <div class="cl-hd" onclick="toggleCliente('${c.id}')">
+        <div><div class="cl-nm">${c.nome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm);margin-top:2px">${c.resp} · ${c.produto} · desde ${fmtDate(c.inicio)||'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cl-prg"><div class="cl-prg-tx">${done}/24</div><div class="cl-prg-br"><div class="cl-prg-fi" style="width:${pct}%"></div></div><div style="font-family:var(--fm);font-size:11px;color:var(--c)">${pct}%</div></div>
+          <button onclick="event.stopPropagation();editarCliente('${c.id}')" title="Editar cliente" style="background:none;border:1px solid var(--b2);color:var(--t2);cursor:pointer;border-radius:6px;padding:3px 8px;font-size:11px;font-family:var(--fm);transition:all .2s" onmouseover="this.style.borderColor='var(--c)';this.style.color='var(--c)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">✏</button>
+          <button onclick="event.stopPropagation();removeCliente('${c.id}')" title="Remover cliente" style="background:none;border:1px solid rgba(240,72,85,.3);color:var(--r);cursor:pointer;border-radius:6px;padding:3px 8px;font-size:11px;font-family:var(--fm);transition:all .2s" onmouseover="this.style.background='rgba(240,72,85,.12)'" onmouseout="this.style.background='none'">✕</button>
+        </div>
       </div>
-      <div class="cl-body" id="clb-${c.id}">
+      <div class="cl-body" id="clb-${cidSafe}">
         ${REUNIOES_PADRAO.map(fase=>`<div style="margin-bottom:14px"><div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">${fase.fase}</div><div class="rg">${fase.items.map(r=>buildReuniaoCard(c,r)).join('')}</div></div>`).join('')}
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)">
           <div style="font-family:var(--fm);font-size:10px;letter-spacing:2px;color:var(--t3);margin-bottom:6px">OBSERVAÇÕES GERAIS</div>
-          <textarea style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t2);font-family:var(--ff);font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s" placeholder="Anotações sobre o cliente..." onfocus="this.style.borderColor='var(--c)'" onblur="this.style.borderColor='var(--b1)'" onchange="updateClienteObs(${c.id},this.value)">${c.obs||''}</textarea>
+          <textarea style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t2);font-family:var(--ff);font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s" placeholder="Anotações sobre o cliente..." onfocus="this.style.borderColor='var(--c)'" onblur="this.style.borderColor='var(--b1)'" onchange="updateClienteObs('${c.id}',this.value)">${c.obs||''}</textarea>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn btn-g btn-sm" onclick="relatorioCliente(${c.id})">📄 Exportar</button>
-          <button class="btn btn-r btn-sm" onclick="removeCliente(${c.id})">✕ Remover</button>
+          <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
         </div>
       </div>
     </div>`;
   }).join('');
 }
 function toggleCliente(id){
-  const el=document.getElementById('clb-'+id);
+  const cidSafe=String(id).replace(/-/g,'_');
+  const el=document.getElementById('clb-'+cidSafe);
+  if(!el)return;
   const isOpening=!el.classList.contains('open');
-  el.classList.toggle('open');
-  if(isOpening){
-    const c=clientesAtivos.find(x=>x.id===id);if(!c)return;
+
+  // Se está abrindo e ainda está vazio, renderizar o conteúdo
+  if(isOpening&&!el.dataset.loaded){
+    const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
+    el.innerHTML=REUNIOES_PADRAO.map(fase=>`<div style="margin-bottom:14px"><div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">${fase.fase}</div><div class="rg">${fase.items.map(r=>buildReuniaoCard(c,r)).join('')}</div></div>`).join('')+
+    `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)">
+      <div style="font-family:var(--fm);font-size:10px;letter-spacing:2px;color:var(--t3);margin-bottom:6px">OBSERVAÇÕES GERAIS</div>
+      <textarea style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t2);font-family:var(--ff);font-size:12px;padding:10px 12px;outline:none;resize:vertical;min-height:70px;transition:border-color .2s" placeholder="Anotações sobre o cliente..." onfocus="this.style.borderColor='var(--c)'" onblur="this.style.borderColor='var(--b1)'" onchange="updateClienteObs('${c.id}',this.value)">${c.obs||''}</textarea>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
+    </div>`;
+    el.dataset.loaded='1';
+    el.classList.add('open');
     carregarRelatorios(c.nome).then(()=>{
-      const wrap=document.getElementById('clb-'+id);if(!wrap)return;
-      wrap.querySelectorAll('.ri[id]').forEach(riEl=>{
+      el.querySelectorAll('.ri[id]').forEach(riEl=>{
+        const parts=riEl.id.split('_');const n=parseInt(parts[parts.length-1]);
+        if(!isNaN(n)){const r=REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===n);
+          if(r){const novo=document.createElement('div');novo.innerHTML=buildReuniaoCard(c,r);riEl.replaceWith(novo.firstElementChild);}}
+      });
+    });
+    return;
+  }
+
+  el.classList.toggle('open');
+  if(isOpening&&el.dataset.loaded){
+    const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
+    carregarRelatorios(c.nome).then(()=>{
+      el.querySelectorAll('.ri[id]').forEach(riEl=>{
         const parts=riEl.id.split('_');const n=parseInt(parts[parts.length-1]);
         if(!isNaN(n)){const r=REUNIOES_PADRAO.flatMap(f=>f.items).find(x=>x.n===n);
           if(r){const novo=document.createElement('div');novo.innerHTML=buildReuniaoCard(c,r);riEl.replaceWith(novo.firstElementChild);}}
@@ -2311,11 +2410,11 @@ function toggleCliente(id){
     });
   }
 }
-function updateReuniao(cid,n,field,val){const c=clientesAtivos.find(x=>x.id===cid);if(!c)return;const r=c.reunioes.find(x=>x.n===n);if(r){r[field]=val;saveClienteToDB(c);toast('✓ Reunião atualizada');renderClientes();}}
-function updateClienteObs(cid,val){const c=clientesAtivos.find(x=>x.id===cid);if(c){c.obs=val;saveClienteToDB(c);toast('✓ Observação salva');}}
-async function removeCliente(id){if(!confirm('Remover cliente?'))return;await deleteClienteFromDB(id);clientesAtivos=clientesAtivos.filter(c=>c.id!==id);toast('Cliente removido');renderClientes();}
+function updateReuniao(cid,n,field,val){const c=clientesAtivos.find(x=>String(x.id)===String(cid));if(!c)return;const r=c.reunioes.find(x=>x.n===n);if(r){r[field]=val;saveClienteToDB(c);toast('✓ Reunião atualizada');}}
+function updateClienteObs(cid,val){const c=clientesAtivos.find(x=>String(x.id)===String(cid));if(c){c.obs=val;saveClienteToDB(c);toast('✓ Observação salva');}}
+async function removeCliente(id){if(!confirm('Remover cliente?'))return;await deleteClienteFromDB(id);clientesAtivos=clientesAtivos.filter(c=>String(c.id)!==String(id));toast('Cliente removido');renderClientes();}
 function relatorioCliente(id){
-  const c=clientesAtivos.find(x=>x.id===id);if(!c)return;
+  const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
   const done=c.reunioes.filter(r=>r.status==='entregue');
   let txt=`RELATÓRIO — ${c.nome}\n${c.resp} | ${c.produto}\nInício: ${c.inicio}\n\nPROGRESSO: ${done.length}/24 (${Math.round((done.length/24)*100)}%)\n\n`;
   REUNIOES_PADRAO.flatMap(f=>f.items).forEach(r=>{
@@ -2327,6 +2426,34 @@ function relatorioCliente(id){
   });
   txt+=`OBSERVAÇÕES:\n${c.obs||'—'}`;
   const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download=`relatorio_${c.nome.replace(/\s+/g,'_')}.txt`;a.click();toast('📄 Relatório exportado!');
+}
+function editarCliente(id){
+  const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
+  document.getElementById('mca-nome').value=c.nome||'';
+  document.getElementById('mca-resp').value=c.resp||'Victor';
+  document.getElementById('mca-prod').value=c.produto||'Escudo 21';
+  document.getElementById('mca-inicio').value=c.inicio||'';
+  document.getElementById('mca-obs').value=c.obs||'';
+  const btn=document.querySelector('#m-cliente .mft .btn-p');
+  if(btn){btn.textContent='Salvar';btn.onclick=()=>salvarEdicaoCliente(id);}
+  const titulo=document.querySelector('#m-cliente .mtl');
+  if(titulo)titulo.textContent='✏ Editar Cliente';
+  openM('m-cliente');
+}
+async function salvarEdicaoCliente(id){
+  const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
+  c.nome=document.getElementById('mca-nome').value.trim()||c.nome;
+  c.resp=document.getElementById('mca-resp').value;
+  c.produto=document.getElementById('mca-prod').value;
+  c.inicio=document.getElementById('mca-inicio').value;
+  c.obs=document.getElementById('mca-obs').value;
+  await saveClienteToDB(c);
+  closeM('m-cliente');
+  const btn=document.querySelector('#m-cliente .mft .btn-p');
+  if(btn){btn.textContent='Adicionar';btn.onclick=()=>saveCliente();}
+  const titulo=document.querySelector('#m-cliente .mtl');
+  if(titulo)titulo.textContent='+ Novo Cliente Ativo';
+  toast('✓ Cliente atualizado!');renderClientes();
 }
 
 // ══════════════════════════════════════════
@@ -2367,14 +2494,6 @@ async function saveLead(){
   closeM('m-lead');
   ['ml-nome','ml-tel','ml-val','ml-obs','ml-data','ml-cac','ml-meses','ml-taxa','ml-d1p'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   toast('Lead adicionado!');aplicarFiltro();
-}
-function saveCusto(){
-  const nome=document.getElementById('mc-nome').value.trim();
-  const val=+document.getElementById('mc-val').value;
-  if(!nome||!val){alert('Preencha nome e valor');return;}
-  custos.push({id:nextCId++,nome,cat:document.getElementById('mc-cat').value,valor:val});
-  closeM('m-custo');document.getElementById('mc-nome').value='';document.getElementById('mc-val').value='';
-  toast('✓ Custo adicionado!');renderFinanceiro();renderPlano();
 }
 async function saveCliente(){
   const nome=document.getElementById('mca-nome').value.trim();
@@ -2417,7 +2536,14 @@ function renderDashComOp(ls){
   const cacs=vendas.filter(l=>l.cac>0);
   const cacMed=cacs.length>0?cacs.reduce((s,l)=>s+l.cac,0)/cacs.length:0;
   const pct=metaDash>0?Math.min((receita/metaDash)*100,999):0;
-  const proj=receita+(ativos.filter(l=>l.temp==='quente').length*ticket*.6)+(ativos.filter(l=>l.temp==='morno').length*ticket*.25);
+  const hojeD=new Date();hojeD.setHours(0,0,0,0);
+  const inicioM=new Date(hojeD.getFullYear(),hojeD.getMonth(),1);
+  const fimM=new Date(hojeD.getFullYear(),hojeD.getMonth()+1,0,23,59,59,999);
+  const duPass=diasUteis(inicioM,hojeD);
+  const duRest=diasUteis(hojeD,fimM);
+  const ticketDia=duPass>0?(receita/duPass):0;
+  const vendaDia=vendas.length>0&&duPass>0?vendas.length/duPass:0;
+  const proj=receita+(ticket*vendaDia*duRest); // realista
 
   // META inputs
   const metaEl=document.getElementById('dash-meta-inp');
@@ -2436,7 +2562,10 @@ function renderDashComOp(ls){
   const projEl=document.getElementById('dash-proj-val');
   if(projEl)projEl.textContent=R(proj);
   const projSub=document.getElementById('dash-proj-sub');
-  if(projSub)projSub.textContent=ativos.length+' leads ativos na conta';
+  const cons=receita+(ticketDia*duRest);
+  const maiorTk=leads.filter(l=>l.status==='venda'&&l.receita>0).reduce((mx,l)=>Math.max(mx,Number(l.receita)),0);
+  const arroj=receita+((maiorTk||ticketDia)*duRest);
+  if(projSub)projSub.textContent=`Cons. ${R(cons)} · Arroj. ${R(arroj)}`;
 
   // KPIs cyan
   const lv=document.getElementById('dash-leads-v');if(lv)lv.textContent=ls.length;
@@ -2445,9 +2574,9 @@ function renderDashComOp(ls){
   const cav=document.getElementById('dash-cac-v');if(cav)cav.textContent=cacMed>0?R(cacMed):'—';
 
   // CHART DIÁRIO
-  const hoje=new Date();
-  const de=new Date(hoje.getFullYear(),hoje.getMonth(),1);
-  const ate=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+  const hojeChart=new Date();
+  const de=new Date(hojeChart.getFullYear(),hojeChart.getMonth(),1);
+  const ate=new Date(hojeChart.getFullYear(),hojeChart.getMonth()+1,0);
   const dias={};let cur=new Date(de);
   while(cur<=ate){const k=cur.toISOString().slice(0,10);dias[k]=0;cur.setDate(cur.getDate()+1);}
   leads.filter(l=>l.status==='venda'&&l.conexao&&l.receita>0).forEach(l=>{
@@ -2456,7 +2585,7 @@ function renderDashComOp(ls){
   });
   const labels=Object.keys(dias).map(d=>d.slice(8)+'/'+d.slice(5,7));
   const vals=Object.values(dias);
-  const diaAtual=hoje.getDate();
+  const diaAtual=hojeChart.getDate();
   const ritmoTotal=diaAtual>0?receita/diaAtual*Object.keys(dias).length:0;
   const ritmoDiario=diaAtual>0?receita/diaAtual:0;
   const ritmoEl=document.getElementById('dash-ritmo-wrap');
@@ -2859,7 +2988,7 @@ function exportCSV(){
 // ══════════════════════════════════════════
 // NAV + RENDER ALL
 // ══════════════════════════════════════════
-const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Pipeline Visual',leads:'Leads & Pipeline',funil:'Funil Comercial',vendedores:'Vendedores',diagnosticos:'Leads · Diagnóstico',financeiro:'Financeiro',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',rh:'RH & Colaboradores',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
+const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Pipeline Visual',leads:'Leads & Pipeline',vendedores:'Vendedores',diagnosticos:'Leads · Diagnóstico',financeiro:'SEU CFO',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',rh:'RH & Colaboradores',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
 function nav(name,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const view=document.getElementById('view-'+name);
@@ -2876,7 +3005,7 @@ function nav(name,el){
   else renderAll();
 }
 function renderAll(){
-  renderOverview();renderKanban();renderLeads();renderFunil();
+  renderOverview();renderKanban();renderLeads();
   renderVendedores();renderProjecao();gerarPlano();renderClientes();
   if(document.getElementById('view-financeiro')?.classList.contains('on'))renderFinanceiro();
 }
