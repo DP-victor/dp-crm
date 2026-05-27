@@ -282,6 +282,53 @@ tr:last-child td{border-bottom:none}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+/* ── MAPA COMERCIAL ── */
+.mc-mesa{background:linear-gradient(135deg,rgba(26,181,107,.06),rgba(26,107,181,.04));border:1px solid rgba(26,181,107,.25);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.mc-mesa-val{font-family:var(--ft);font-size:32px;font-weight:800;color:var(--g);letter-spacing:-1px}
+.mc-mesa-lbl{font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--g);text-transform:uppercase;margin-bottom:3px}
+.mc-mesa-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.mc-flow{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:8px;gap:0}
+.mc-flow::-webkit-scrollbar{height:4px}.mc-flow::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.mc-etapa-wrap{display:flex;align-items:stretch;gap:0}
+.mc-etapa{background:var(--s1);border:1px solid var(--b1);border-radius:10px;width:158px;flex-shrink:0;transition:border-color .2s}
+.mc-etapa.vaz{border-color:rgba(192,57,43,.35);border-top:2px solid var(--r)}
+.mc-etapa.ok{border-color:rgba(26,181,107,.35);border-top:2px solid var(--g)}
+.mc-etapa.edit{border-color:var(--c);box-shadow:0 0 0 2px rgba(26,107,181,.08)}
+.mc-eh{padding:10px 12px 8px;border-bottom:1px solid var(--b1)}
+.mc-eord{font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:2px}
+.mc-enm{font-size:12px;font-weight:700;color:var(--tx)}
+.mc-eb{padding:10px 12px}
+.mc-vol{font-family:var(--ft);font-size:20px;font-weight:800;color:var(--tx)}
+.mc-vlbl{font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:6px}
+.mc-bar-bg{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin:6px 0 3px}
+.mc-bar-fi{height:100%;border-radius:2px;transition:width .5s ease}
+.mc-bar-ok{background:var(--g)}.mc-bar-wn{background:var(--y)}.mc-bar-bd{background:var(--r)}
+.mc-barlbl{display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;margin-bottom:2px}
+.mc-vaz-chip{display:flex;align-items:center;gap:4px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:5px;padding:3px 7px;margin-top:6px}
+.mc-vaz-chip span{font-family:var(--fm);font-size:10px;color:var(--r)}
+.mc-ok-chip{background:rgba(26,181,107,.08);border:1px solid rgba(26,181,107,.2);border-radius:5px;padding:3px 7px;margin-top:6px;font-family:var(--fm);font-size:10px;color:var(--g)}
+.mc-ganho{background:rgba(26,107,181,.06);border:1px solid rgba(26,107,181,.15);border-radius:5px;padding:4px 7px;margin-top:5px}
+.mc-ganho-lbl{font-family:var(--fm);font-size:9px;color:var(--c);text-transform:uppercase;letter-spacing:.05em}
+.mc-ganho-val{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--c)}
+.mc-eacts{padding:6px 12px 10px;border-top:1px solid var(--b1);display:flex;gap:4px}
+.mc-eacts button{flex:1;font-family:var(--fm);font-size:9px;font-weight:600;padding:4px 3px;border-radius:5px;border:1px solid var(--b1);background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.mc-eacts button:hover{border-color:var(--c);color:var(--c)}
+.mc-eacts button.act-ok{background:rgba(26,181,107,.1);border-color:rgba(26,181,107,.3);color:var(--g)}
+.mc-eacts button.act-sup{background:rgba(192,57,43,.1);border-color:rgba(192,57,43,.3);color:var(--r)}
+.mc-arrow{display:flex;align-items:center;padding:0 3px;flex-shrink:0}
+.mc-arr-ln{width:22px;height:2px;background:var(--b1);position:relative}
+.mc-arr-ln::after{content:'';position:absolute;right:-4px;top:-3px;border-left:6px solid var(--b1);border-top:4px solid transparent;border-bottom:4px solid transparent}
+.mc-arr-ln.vaz{background:rgba(192,57,43,.35)}.mc-arr-ln.vaz::after{border-left-color:rgba(192,57,43,.35)}
+.mc-arr-ln.ok{background:rgba(26,181,107,.35)}.mc-arr-ln.ok::after{border-left-color:rgba(26,181,107,.35)}
+.mc-inter-item{background:var(--s2);border-radius:7px;padding:8px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.mc-inter-tipo{font-family:var(--fm);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.mc-t-feito{background:rgba(26,181,107,.12);color:var(--g)}
+.mc-t-com{background:rgba(26,107,181,.1);color:var(--c)}
+.mc-t-sup{background:rgba(192,57,43,.1);color:var(--r)}
+.mc-pub-bar{background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:16px}
+.mc-status-pub{background:rgba(26,181,107,.12);color:var(--g);border:1px solid rgba(26,181,107,.25);font-family:var(--fm);font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.08em}
+.mc-status-ras{background:rgba(192,138,0,.1);color:var(--y);border:1px solid rgba(192,138,0,.2);font-family:var(--fm);font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.08em}
 </style>
 </head>
 <body>
@@ -327,6 +374,7 @@ tr:last-child td{border-bottom:none}
     <div class="sbsec">Operacional</div>
     <button class="sba" onclick="nav('plano',this)"><span class="ic">⚡</span>Plano de Ação</button>
     <button class="sba" onclick="nav('clientes',this)"><span class="ic">★</span>Clientes Ativos</button>
+    <button class="sba" onclick="nav('mapa_comercial',this)"><span class="ic">◈</span>Mapa Comercial</button>
     <div class="sbsec">Pessoas</div>
     <button class="sba" onclick="nav('rh',this)"><span class="ic">⊛</span>RH & Colaboradores</button>
     <div class="sbsec">Ações</div>
@@ -794,6 +842,81 @@ tr:last-child td{border-bottom:none}
 
     <!-- PERFORMANCE (injetado via JS) -->
     <!-- EMPRESAS ADMIN (injetado via JS) -->
+
+    <!-- MAPA COMERCIAL -->
+    <div class="view" id="view-mapa_comercial">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:var(--ft);font-size:16px;font-weight:800;letter-spacing:-.3px">◈ Mapa Comercial</div>
+          <div style="font-size:11px;color:var(--t2);font-family:var(--fm);margin-top:2px" id="mc-cliente-sub">Selecione um cliente para carregar o mapa</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="psel" id="mc-sel-cliente" onchange="mcSelecionarCliente(this.value)">
+            <option value="">Selecionar cliente...</option>
+          </select>
+          <div id="mc-ticket-badge" style="display:none;background:rgba(26,107,181,.1);border:1px solid rgba(26,107,181,.2);border-radius:7px;padding:5px 10px;font-family:var(--fm);font-size:10px;color:var(--c)">
+            Ticket médio: <strong id="mc-ticket-val">—</strong>
+          </div>
+          <span id="mc-status-badge" style="display:none"></span>
+          <button class="btn btn-g btn-sm" id="mc-btn-nova-etapa" style="display:none" onclick="mcNovaEtapa()">+ Etapa</button>
+          <button class="btn btn-p btn-sm" id="mc-btn-publicar" style="display:none" onclick="mcPublicar('publicado')">↑ Publicar</button>
+        </div>
+      </div>
+
+      <!-- Dinheiro na mesa -->
+      <div class="mc-mesa" id="mc-mesa" style="display:none">
+        <div>
+          <div class="mc-mesa-lbl">💰 Receita disponível agora</div>
+          <div class="mc-mesa-val" id="mc-mesa-val">R$ 0</div>
+          <div class="mc-mesa-sub">sem contratar 1 vendedor a mais · corrigindo os vazamentos</div>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:var(--r)" id="mc-n-vaz">0</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">etapas vazando</div></div>
+          <div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:var(--y)" id="mc-n-leads">0</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">leads escapando</div></div>
+          <div style="text-align:center"><div style="font-family:var(--ft);font-size:18px;font-weight:800;color:var(--c)" id="mc-conv-media">0%</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">conversão atual</div></div>
+        </div>
+      </div>
+
+      <!-- Estado vazio / carregando -->
+      <div id="mc-estado">
+        <div class="empty"><div class="empty-ic">◈</div><div class="empty-tx">Selecione um cliente para carregar o mapa comercial</div></div>
+      </div>
+
+      <!-- Mapa de funil -->
+      <div id="mc-mapa-wrap" style="display:none">
+        <div class="mc-flow" id="mc-flow"></div>
+      </div>
+
+      <!-- Interações -->
+      <div id="mc-inter-panel" style="display:none;margin-top:18px">
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">◈ Interações — <span id="mc-inter-etapa-nm" style="color:var(--t2);font-weight:400">selecione uma etapa</span></div>
+          </div>
+          <div id="mc-inter-lista" style="max-height:220px;overflow-y:auto;margin-bottom:12px">
+            <div class="empty" style="padding:16px"><div class="empty-tx">Clique em uma etapa para ver interações</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="psel" id="mc-inter-tipo">
+              <option value="comentario">💬 Comentário</option>
+              <option value="feito">✓ Feito</option>
+              <option value="suporte">🆘 Suporte</option>
+            </select>
+            <input class="si" id="mc-inter-txt" placeholder="Observação..." style="flex:1;min-width:180px">
+            <button class="btn btn-p btn-sm" onclick="mcAddInteracao()">Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra publicar -->
+      <div class="mc-pub-bar" id="mc-pub-bar" style="display:none">
+        <div style="font-size:12px;color:var(--t2)">Status: <strong id="mc-pub-txt" style="color:var(--tx)">Rascunho</strong> · O cliente visualiza após publicação</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g btn-sm" onclick="mcPublicar('rascunho')">Salvar Rascunho</button>
+          <button class="btn btn-p btn-sm" onclick="mcPublicar('publicado')">↑ Publicar para Cliente</button>
+        </div>
+      </div>
+    </div>
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -2364,6 +2487,7 @@ function renderClientes(){
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
+          <button class="btn btn-p btn-sm" onclick="abrirMapaComercial('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Mapa Comercial</button>
         </div>
       </div>
     </div>`;
@@ -2385,6 +2509,7 @@ function toggleCliente(id){
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
       <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
+      <button class="btn btn-p btn-sm" onclick="abrirMapaComercial('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Mapa Comercial</button>
     </div>`;
     el.dataset.loaded='1';
     el.classList.add('open');
@@ -2988,7 +3113,7 @@ function exportCSV(){
 // ══════════════════════════════════════════
 // NAV + RENDER ALL
 // ══════════════════════════════════════════
-const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Pipeline Visual',leads:'Leads & Pipeline',vendedores:'Vendedores',diagnosticos:'Leads · Diagnóstico',financeiro:'SEU CFO',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',rh:'RH & Colaboradores',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites'};
+const viewTitles={dashboard:'Dashboard',overview:'Visão Geral',kanban:'Pipeline Visual',leads:'Leads & Pipeline',vendedores:'Vendedores',diagnosticos:'Leads · Diagnóstico',financeiro:'SEU CFO',projecao:'Projeção & Metas',plano:'Plano de Ação',clientes:'Clientes Ativos',rh:'RH & Colaboradores',performance:'Performance dos Clientes',empresas_admin:'Empresas & Convites',mapa_comercial:'Mapa Comercial'};
 function nav(name,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const view=document.getElementById('view-'+name);
@@ -3002,6 +3127,7 @@ function nav(name,el){
   else if(name==='dashboard')renderDashboard();
   else if(name==='rh'){renderColabs();}
   else if(name==='financeiro'){renderFinanceiro();}
+  else if(name==='mapa_comercial'){setTimeout(mcPopularSelect,50);}
   else renderAll();
 }
 function renderAll(){
@@ -3218,6 +3344,246 @@ setInterval(()=>{const e=document.getElementById('nowTime');if(e)e.textContent=n
 
 // ── INIT ──
 window.addEventListener('load',()=>{checkSession();});
+
+// ══════════════════════════════════════════
+// MAPA COMERCIAL
+// ══════════════════════════════════════════
+let mcMapa=null,mcClienteId=null,mcEtapaInterId=null,mcTicket=0,mcEtapas=[];
+
+function R2(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0}).format(v);}
+
+async function mcPopularSelect(){
+  const sel=document.getElementById('mc-sel-cliente');
+  if(!sel||sel.options.length>1)return;
+  const{data}=await sb.from('clientes_ativos').select('id,nome').eq('empresa_id',EMPRESA_ID).order('nome');
+  (data||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.nome;sel.appendChild(o);});
+}
+
+function abrirMapaComercial(clienteId,clienteNome){
+  nav('mapa_comercial',document.querySelector('.sba[onclick*="mapa_comercial"]'));
+  setTimeout(()=>{
+    const sel=document.getElementById('mc-sel-cliente');
+    if(sel){sel.value=clienteId;mcSelecionarCliente(clienteId);}
+  },100);
+}
+
+async function mcSelecionarCliente(clienteId){
+  mcClienteId=clienteId;mcMapa=null;mcEtapas=[];mcEtapaInterId=null;
+  document.getElementById('mc-mesa').style.display='none';
+  document.getElementById('mc-mapa-wrap').style.display='none';
+  document.getElementById('mc-inter-panel').style.display='none';
+  document.getElementById('mc-pub-bar').style.display='none';
+  document.getElementById('mc-btn-nova-etapa').style.display='none';
+  document.getElementById('mc-btn-publicar').style.display='none';
+  document.getElementById('mc-ticket-badge').style.display='none';
+  document.getElementById('mc-status-badge').style.display='none';
+  if(!clienteId){document.getElementById('mc-estado').innerHTML='<div class="empty"><div class="empty-ic">◈</div><div class="empty-tx">Selecione um cliente para carregar o mapa comercial</div></div>';document.getElementById('mc-cliente-sub').textContent='Selecione um cliente para carregar o mapa';return;}
+  document.getElementById('mc-estado').innerHTML='<div class="empty"><div class="empty-tx" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border:2px solid var(--b2);border-top-color:var(--c);border-radius:50%;display:inline-block;animation:blink 0.7s linear infinite"></span>Carregando...</div></div>';
+  // ticket médio
+  const{data:lv}=await sb.from('leads').select('receita').eq('empresa_id',EMPRESA_ID).in('status',['venda','fechado','Venda','Fechado']);
+  const vendas=(lv||[]).filter(l=>Number(l.receita)>0);
+  mcTicket=vendas.length?vendas.reduce((s,l)=>s+Number(l.receita),0)/vendas.length:0;
+  if(mcTicket>0){document.getElementById('mc-ticket-val').textContent=R2(mcTicket);document.getElementById('mc-ticket-badge').style.display='';}
+  // nome cliente
+  const c=clientesAtivos.find(x=>String(x.id)===String(clienteId));
+  document.getElementById('mc-cliente-sub').textContent=c?`${c.nome} · ${c.produto||'—'}`:'';
+  // mapa
+  const{data:mapas}=await sb.from('mapa_comercial').select('*').eq('cliente_id',clienteId).order('criado_em',{ascending:false}).limit(1);
+  if(!mapas?.length){
+    document.getElementById('mc-estado').innerHTML=`<div class="empty"><div class="empty-ic">◈</div><div class="empty-tx">Nenhum mapa criado para este cliente</div><div style="margin-top:12px"><button class="btn btn-p btn-sm" onclick="mcCriarMapa()">+ Criar Mapa Comercial</button></div></div>`;
+    return;
+  }
+  mcMapa=mapas[0];
+  mcRenderStatus();
+  await mcCarregarEtapas();
+  document.getElementById('mc-estado').style.display='none';
+  document.getElementById('mc-mapa-wrap').style.display='block';
+  document.getElementById('mc-inter-panel').style.display='block';
+  document.getElementById('mc-pub-bar').style.display='flex';
+  document.getElementById('mc-btn-nova-etapa').style.display='';
+  document.getElementById('mc-btn-publicar').style.display='';
+  mcRenderMapa();
+}
+
+async function mcCarregarEtapas(){
+  const{data:ets}=await sb.from('mapa_comercial_etapas').select('*').eq('mapa_id',mcMapa.id).order('ordem');
+  const{data:inters}=await sb.from('mapa_comercial_interacoes').select('etapa_id,tipo').eq('mapa_id',mcMapa.id);
+  const feitoSet=new Set((inters||[]).filter(i=>i.tipo==='feito').map(i=>i.etapa_id));
+  const supSet=new Set((inters||[]).filter(i=>i.tipo==='suporte').map(i=>i.etapa_id));
+  mcEtapas=(ets||[]).map(e=>({...e,_feito:feitoSet.has(e.id),_sup:supSet.has(e.id)}));
+}
+
+function mcRenderStatus(){
+  const badge=document.getElementById('mc-status-badge');
+  badge.style.display='';
+  badge.className=mcMapa.status==='publicado'?'mc-status-pub':'mc-status-ras';
+  badge.textContent=mcMapa.status==='publicado'?'● Publicado':'○ Rascunho';
+  const txt=document.getElementById('mc-pub-txt');
+  if(txt)txt.textContent=mcMapa.status==='publicado'?'Publicado':'Rascunho';
+}
+
+function mcRenderMapa(){
+  // calcular dinheiro na mesa
+  let totalGanho=0,nVaz=0,nLeads=0,somaConv=0;
+  mcEtapas.forEach(e=>{
+    const at=parseFloat(e.taxa_conversao_atual)||0;
+    const pt=parseFloat(e.taxa_conversao_potencial)||0;
+    const vol=parseInt(e.volume_entrada)||0;
+    somaConv+=at;
+    if(pt>at&&vol>0){nVaz++;const lp=Math.round(vol*(pt-at)/100);nLeads+=lp;totalGanho+=lp*mcTicket;}
+  });
+  if(totalGanho>0||nVaz>0){
+    document.getElementById('mc-mesa').style.display='flex';
+    document.getElementById('mc-mesa-val').textContent=R2(totalGanho);
+    document.getElementById('mc-n-vaz').textContent=nVaz;
+    document.getElementById('mc-n-leads').textContent=nLeads;
+    document.getElementById('mc-conv-media').textContent=(mcEtapas.length?Math.round(somaConv/mcEtapas.length):0)+'%';
+  }
+  // render flow
+  const flow=document.getElementById('mc-flow');
+  flow.innerHTML='';
+  mcEtapas.sort((a,b)=>a.ordem-b.ordem).forEach((e,i)=>{
+    const at=parseFloat(e.taxa_conversao_atual)||0;
+    const pt=parseFloat(e.taxa_conversao_potencial)||0;
+    const vol=parseInt(e.volume_entrada)||0;
+    const volSaida=Math.round(vol*at/100);
+    const vaz=vol-volSaida;
+    const temVaz=pt>at;
+    const ganho=temVaz?Math.round(vol*(pt-at)/100)*mcTicket:0;
+    let barClass='mc-bar-ok';if(at<40)barClass='mc-bar-bd';else if(at<65)barClass='mc-bar-wn';
+    const wrap=document.createElement('div');wrap.className='mc-etapa-wrap';
+    const card=document.createElement('div');
+    card.className=`mc-etapa ${temVaz?'vaz':'ok'}`;
+    card.innerHTML=`
+      <div class="mc-eh"><div class="mc-eord">${String(e.ordem).padStart(2,'0')}</div><div class="mc-enm">${e.nome}</div></div>
+      <div class="mc-eb">
+        <div class="mc-vol">${vol.toLocaleString('pt-BR')}</div>
+        <div class="mc-vlbl">leads entrando</div>
+        <div class="mc-barlbl"><span style="color:var(--t3)">conv.</span><span style="font-weight:700;color:var(--tx)">${at}%</span></div>
+        <div class="mc-bar-bg"><div class="mc-bar-fi ${barClass}" style="width:${at}%"></div></div>
+        ${temVaz
+          ?`<div class="mc-vaz-chip"><span>▼ ${vaz} leads escapando</span></div>${ganho>0&&mcTicket>0?`<div class="mc-ganho"><div class="mc-ganho-lbl">ganho potencial</div><div class="mc-ganho-val">${R2(ganho)}</div></div>`:''}`
+          :`<div class="mc-ok-chip">✓ saudável</div>`
+        }
+      </div>
+      <div class="mc-eacts">
+        <button class="${e._feito?'act-ok':''}" onclick="mcAbrirInter('${e.id}','${e.nome.replace(/'/g,"\\'")}','feito')">✓</button>
+        <button onclick="mcAbrirInter('${e.id}','${e.nome.replace(/'/g,"\\'")}','comentario')">💬</button>
+        <button class="${e._sup?'act-sup':''}" onclick="mcAbrirInter('${e.id}','${e.nome.replace(/'/g,"\\'")}','suporte')">🆘</button>
+        <button onclick="mcEditarEtapa('${e.id}')">✎</button>
+      </div>`;
+    wrap.appendChild(card);
+    if(i<mcEtapas.length-1){
+      const arr=document.createElement('div');arr.className='mc-arrow';
+      arr.innerHTML=`<div class="mc-arr-ln ${temVaz?'vaz':'ok'}"></div>`;
+      wrap.appendChild(arr);
+    }
+    flow.appendChild(wrap);
+  });
+}
+
+async function mcCriarMapa(){
+  if(!mcClienteId)return;
+  const{data:m,error}=await sb.from('mapa_comercial').insert({cliente_id:mcClienteId,empresa_id:EMPRESA_ID,ticket_medio:mcTicket||0}).select().single();
+  if(error){toast('Erro ao criar mapa','err');return;}
+  mcMapa=m;
+  const etapasPad=['Apresentação','Conexão','DI','Speech','Fechamento','Referido','Validação'];
+  const bulk=etapasPad.map((nome,i)=>({mapa_id:m.id,cliente_id:mcClienteId,empresa_id:EMPRESA_ID,ordem:i+1,nome,volume_entrada:0,taxa_conversao_atual:0,taxa_conversao_potencial:0}));
+  await sb.from('mapa_comercial_etapas').insert(bulk);
+  toast('✓ Mapa criado com 7 etapas');
+  await mcSelecionarCliente(mcClienteId);
+}
+
+async function mcNovaEtapa(){
+  if(!mcMapa)return;
+  const proxOrdem=mcEtapas.length?Math.max(...mcEtapas.map(e=>e.ordem))+1:1;
+  const{data:ne}=await sb.from('mapa_comercial_etapas').insert({mapa_id:mcMapa.id,cliente_id:mcClienteId,empresa_id:EMPRESA_ID,ordem:proxOrdem,nome:'Nova Etapa',volume_entrada:0,taxa_conversao_atual:0,taxa_conversao_potencial:0}).select().single();
+  toast('✓ Etapa adicionada');
+  await mcCarregarEtapas();mcRenderMapa();
+  if(ne)mcEditarEtapa(ne.id);
+}
+
+async function mcEditarEtapa(etapaId){
+  const e=mcEtapas.find(x=>x.id===etapaId);if(!e)return;
+  document.getElementById('mce-id').value=e.id;
+  document.getElementById('mce-nome').value=e.nome;
+  document.getElementById('mce-vol').value=e.volume_entrada;
+  document.getElementById('mce-taxa').value=e.taxa_conversao_atual;
+  document.getElementById('mce-taxa-lbl').textContent=e.taxa_conversao_atual+'%';
+  document.getElementById('mce-pot').value=e.taxa_conversao_potencial;
+  document.getElementById('mce-pot-lbl').textContent=e.taxa_conversao_potencial+'%';
+  openM('m-mc-etapa');
+}
+
+async function mcSalvarEtapa(){
+  const id=document.getElementById('mce-id').value;
+  const payload={nome:document.getElementById('mce-nome').value,volume_entrada:parseInt(document.getElementById('mce-vol').value)||0,taxa_conversao_atual:parseFloat(document.getElementById('mce-taxa').value)||0,taxa_conversao_potencial:parseFloat(document.getElementById('mce-pot').value)||0,atualizado_em:new Date().toISOString()};
+  const{error}=await sb.from('mapa_comercial_etapas').update(payload).eq('id',id);
+  if(error){toast('Erro ao salvar','err');return;}
+  closeM('m-mc-etapa');toast('✓ Etapa salva');
+  await mcCarregarEtapas();mcRenderMapa();
+}
+
+function mcAbrirInter(etapaId,etapaNome,tipo){
+  mcEtapaInterId=etapaId;
+  document.getElementById('mc-inter-etapa-nm').textContent=etapaNome;
+  document.getElementById('mc-inter-tipo').value=tipo;
+  document.getElementById('mc-inter-panel').scrollIntoView({behavior:'smooth'});
+  mcCarregarInters(etapaId);
+}
+
+async function mcCarregarInters(etapaId){
+  const{data}=await sb.from('mapa_comercial_interacoes').select('*').eq('etapa_id',etapaId).order('criado_em',{ascending:false});
+  const el=document.getElementById('mc-inter-lista');
+  if(!data?.length){el.innerHTML='<div class="empty" style="padding:12px"><div class="empty-tx">Nenhuma interação ainda</div></div>';return;}
+  el.innerHTML=data.map(i=>`<div class="mc-inter-item"><span class="mc-inter-tipo ${i.tipo==='feito'?'mc-t-feito':i.tipo==='suporte'?'mc-t-sup':'mc-t-com'}">${i.tipo==='feito'?'✓ Feito':i.tipo==='suporte'?'🆘 Suporte':'💬 Comentário'}</span><div style="flex:1"><div style="font-size:12px;color:var(--tx)">${i.conteudo||'—'}</div><div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:2px">${i.autor} · ${new Date(i.criado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join('');
+}
+
+async function mcAddInteracao(){
+  if(!mcEtapaInterId||!mcMapa){toast('Selecione uma etapa primeiro','wrn');return;}
+  const tipo=document.getElementById('mc-inter-tipo').value;
+  const conteudo=document.getElementById('mc-inter-txt').value.trim();
+  if(!conteudo){toast('Digite uma observação','wrn');return;}
+  await sb.from('mapa_comercial_interacoes').insert({etapa_id:mcEtapaInterId,mapa_id:mcMapa.id,empresa_id:EMPRESA_ID,tipo,conteudo,autor:'DP'});
+  document.getElementById('mc-inter-txt').value='';
+  toast('✓ Interação salva');
+  await mcCarregarInters(mcEtapaInterId);
+  await mcCarregarEtapas();mcRenderMapa();
+}
+
+async function mcPublicar(status){
+  if(!mcMapa)return;
+  await sb.from('mapa_comercial').update({status,atualizado_em:new Date().toISOString()}).eq('id',mcMapa.id);
+  mcMapa.status=status;mcRenderStatus();
+  toast(status==='publicado'?'✓ Mapa publicado para o cliente':'✓ Salvo como rascunho');
+}
+
+
+
 </script>
+<!-- MODAL ETAPA MAPA COMERCIAL -->
+<div class="modal" id="m-mc-etapa">
+  <div class="mbox" style="max-width:460px">
+    <div class="mhd"><div class="mtl">◈ Editar Etapa</div><button class="mcl" onclick="closeM('m-mc-etapa')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="mce-id">
+      <div class="fg"><label class="fl">Nome da etapa</label><input class="fi" id="mce-nome" placeholder="ex: Apresentação"></div>
+      <div class="fg"><label class="fl">Volume de entrada (leads)</label><input class="fi" id="mce-vol" type="number" min="0" placeholder="0"></div>
+      <div class="fg">
+        <label class="fl">Taxa de conversão atual: <span id="mce-taxa-lbl" style="color:var(--c)">0%</span></label>
+        <input type="range" id="mce-taxa" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--c)" oninput="document.getElementById('mce-taxa-lbl').textContent=this.value+'%'">
+      </div>
+      <div class="fg">
+        <label class="fl">Taxa de conversão potencial: <span id="mce-pot-lbl" style="color:var(--g)">0%</span></label>
+        <input type="range" id="mce-pot" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--g)" oninput="document.getElementById('mce-pot-lbl').textContent=this.value+'%'">
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-g" onclick="closeM('m-mc-etapa')">Cancelar</button>
+      <button class="btn btn-p" onclick="mcSalvarEtapa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
