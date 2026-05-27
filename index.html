@@ -283,7 +283,35 @@ tr:last-child td{border-bottom:none}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-/* ── MAPA COMERCIAL ── */
+/* ── DIAGNÓSTICO FUNIL STEPPER ── */
+.df-step{font-family:var(--fm);font-size:9px;letter-spacing:1.5px;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .2s;color:var(--t3);white-space:nowrap;border:1px solid transparent}
+.df-step.on{color:var(--c);background:rgba(26,107,181,.1);border-color:rgba(26,107,181,.2)}
+.df-step.done{color:var(--g);background:rgba(26,181,107,.08);border-color:rgba(26,181,107,.2)}
+.df-q{margin-bottom:16px}
+.df-qlbl{font-family:var(--fm);font-size:10px;letter-spacing:1px;color:var(--t2);text-transform:uppercase;margin-bottom:5px;display:block}
+.df-qi{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--tx);font-family:var(--ff);font-size:13px;outline:none;transition:border-color .2s}
+.df-qi:focus{border-color:var(--c)}
+.df-qi::placeholder{color:var(--t3)}
+.df-sec{font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;padding:12px 0 8px;border-bottom:1px solid var(--b1);margin-bottom:14px}
+.df-etapa-row{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.df-etapa-nm{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.df-etapa-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.df-gargalo{background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:14px;margin-bottom:8px;border-left:3px solid var(--accent,var(--c))}
+.df-gargalo-title{font-family:var(--ft);font-size:13px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.df-gargalo-desc{font-size:12px;color:var(--t2);line-height:1.6}
+.df-gargalo-valor{font-family:var(--fm);font-size:13px;font-weight:700;margin-top:6px}
+.df-check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--b1)}
+.df-check-item:last-child{border:none}
+.df-check-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--c);cursor:pointer;flex-shrink:0;margin-top:2px}
+.df-check-label{font-size:13px;color:var(--t2);flex:1;line-height:1.5}
+.df-check-label strong{color:var(--tx);display:block;margin-bottom:2px}
+.df-check-label small{font-size:11px;font-family:var(--fm);color:var(--t3)}
+.df-mesa-box{background:linear-gradient(135deg,rgba(26,181,107,.08),rgba(26,107,181,.04));border:1px solid rgba(26,181,107,.25);border-radius:12px;padding:16px 20px;margin:16px 0;text-align:center}
+.df-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.df-tag{font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:12px;cursor:pointer;border:1px solid var(--b1);background:var(--s2);color:var(--t2);transition:all .15s}
+.df-tag.sel{background:rgba(26,107,181,.12);border-color:rgba(26,107,181,.3);color:var(--c)}
+
+
 .mc-mesa{background:linear-gradient(135deg,rgba(26,181,107,.06),rgba(26,107,181,.04));border:1px solid rgba(26,181,107,.25);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
 .mc-mesa-val{font-family:var(--ft);font-size:32px;font-weight:800;color:var(--g);letter-spacing:-1px}
 .mc-mesa-lbl{font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--g);text-transform:uppercase;margin-bottom:3px}
@@ -2435,11 +2463,14 @@ function buildReuniaoCard(c,r){
   const checksFeitos=(cached.checks||[]).length;
   const totalChecks=pb?pb.perguntas.length:0;
   const progPct=totalChecks>0?Math.round((checksFeitos/totalChecks)*100):0;
+  // Botão especial para Reunião 2 — Diagnóstico + Payback
+  const btnDiag=r.n===2?`<button onclick="event.stopPropagation();abrirDiagFunil('${c.id}','${c.nome.replace(/'/g,"\\'")}')" style="background:linear-gradient(135deg,rgba(26,107,181,.15),rgba(26,181,107,.1));border:1px solid rgba(26,107,181,.3);border-radius:6px;color:var(--c);font-family:var(--fm);font-size:9px;letter-spacing:1px;padding:4px 10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap" onmouseover="this.style.background='linear-gradient(135deg,rgba(26,107,181,.25),rgba(26,181,107,.15))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(26,107,181,.15),rgba(26,181,107,.1))'">◈ Diagnóstico de Funil</button>`:'';
   return`<div class="ri ${cls}" id="ri_${nomeId}_${r.n}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
       <div><div class="ri-num">REUNIÃO ${r.n} · ${r.resp}</div><div class="ri-tit">${r.t}</div></div>
       <button onclick="togglePlaybook('${c.nome}',${r.n})" style="background:none;border:none;color:var(--c);cursor:pointer;font-size:14px;flex-shrink:0;padding:0" title="Playbook">📋</button>
     </div>
+    ${btnDiag?`<div style="margin:8px 0 4px">${btnDiag}</div>`:''}
     ${totalChecks>0?`<div style="margin:6px 0 2px"><div class="prog"><div class="prog-f" style="width:${progPct}%;background:${progPct===100?'var(--g)':'var(--c)'}"></div></div><div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:2px">${checksFeitos}/${totalChecks}</div></div>`:''}
     <select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
       <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
@@ -2487,6 +2518,7 @@ function renderClientes(){
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
+          <button class="btn btn-g btn-sm" onclick="abrirRelatorioDiag('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Relatório Diag.</button>
           <button class="btn btn-p btn-sm" onclick="abrirMapaComercial('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Mapa Comercial</button>
         </div>
       </div>
@@ -2509,6 +2541,7 @@ function toggleCliente(id){
     </div>
     <div style="margin-top:10px;display:flex;gap:8px">
       <button class="btn btn-g btn-sm" onclick="relatorioCliente('${c.id}')">📄 Exportar</button>
+      <button class="btn btn-g btn-sm" onclick="abrirRelatorioDiag('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Relatório Diag.</button>
       <button class="btn btn-p btn-sm" onclick="abrirMapaComercial('${c.id}','${c.nome.replace(/'/g,"\\'")}')">◈ Mapa Comercial</button>
     </div>`;
     el.dataset.loaded='1';
@@ -3346,8 +3379,410 @@ setInterval(()=>{const e=document.getElementById('nowTime');if(e)e.textContent=n
 window.addEventListener('load',()=>{checkSession();});
 
 // ══════════════════════════════════════════
-// MAPA COMERCIAL
+// DIAGNÓSTICO DE FUNIL — Reunião 2
 // ══════════════════════════════════════════
+let dfClienteId=null,dfClienteNome=null,dfSessaoId=null,dfStep=1,dfDados={};
+
+const DF_ETAPAS_PADRAO=['Apresentação','Conexão','DI','Speech','Fechamento','Referido','Validação'];
+
+const DF_SISTEMA_CHECKS=[
+  {id:'crm',titulo:'Acesso ao CRM configurado',desc:'Login e senha entregues, portal aberto no dispositivo do cliente'},
+  {id:'kanban',titulo:'Kanban de pipeline explicado',desc:'Mostrar como mover leads entre etapas e registrar o status'},
+  {id:'leads',titulo:'Como cadastrar um lead',desc:'Demonstrar o cadastro manual e explicar os campos obrigatórios'},
+  {id:'mapa',titulo:'Mapa Comercial apresentado',desc:'Mostrar o diagnóstico de funil preenchido e o dinheiro na mesa'},
+  {id:'relatorio',titulo:'Onde acessar relatórios',desc:'Explicar a aba de visão geral e as métricas disponíveis'},
+  {id:'rotina',titulo:'Rotina semanal combinada',desc:'15 min toda segunda — revisar pipeline e atualizar leads'},
+];
+
+async function abrirDiagFunil(clienteId,clienteNome){
+  dfClienteId=clienteId;dfClienteNome=clienteNome;dfStep=1;dfDados={etapas:[],canais:[],sistemaChecks:[]};
+  document.getElementById('df-cliente-nm').textContent='· '+clienteNome;
+  // Verifica se já existe sessão
+  const{data:sess}=await sb.from('diag_funil_sessoes').select('*').eq('cliente_id',clienteId).order('criado_em',{ascending:false}).limit(1);
+  if(sess?.length){
+    dfSessaoId=sess[0].id;
+    dfDados={
+      comoProspecta:sess[0].como_prospecta||'',
+      comoLeadChega:sess[0].como_lead_chega||'',
+      ticketDeclarado:sess[0].ticket_medio_declarado||0,
+      volumeMensal:sess[0].volume_mensal_leads||0,
+      maiorGargalo:sess[0].maior_gargalo||'',
+      ondePerde:sess[0].onde_perde_venda||'',
+      taxaConv:sess[0].taxa_conversao_estimada||0,
+      etapas:sess[0].etapas_atuais||[],
+      canais:sess[0].canais_aquisicao||[],
+      sistemaChecks:sess[0].sistema_checks||[],
+      proximosPassos:sess[0].proximos_passos||'',
+      status:sess[0].status
+    };
+  } else {
+    dfSessaoId=null;
+    dfDados={comoProspecta:'',comoLeadChega:'',ticketDeclarado:0,volumeMensal:0,maiorGargalo:'',ondePerde:'',taxaConv:0,etapas:DF_ETAPAS_PADRAO.map(n=>({nome:n,volume:0,conversao:0,bloqueio:''})),canais:[],sistemaChecks:[],proximosPassos:'',status:'rascunho'};
+  }
+  dfRenderStep();
+  openM('m-diag-funil');
+}
+
+function dfGoStep(n){
+  if(n>dfStep)return; // só avança pelo botão
+  dfColherDados();dfStep=n;dfRenderStep();
+}
+
+function dfRenderStep(){
+  // atualiza steps bar
+  document.querySelectorAll('.df-step').forEach(el=>{
+    const s=+el.dataset.s;
+    el.classList.toggle('on',s===dfStep);
+    el.classList.toggle('done',s<dfStep);
+  });
+  document.getElementById('df-btn-prev').style.display=dfStep>1?'':'none';
+  document.getElementById('df-btn-next').style.display=dfStep<4?'':'none';
+  document.getElementById('df-btn-concluir').style.display=dfStep===4?'':'none';
+
+  const body=document.getElementById('df-body');
+  if(dfStep===1)body.innerHTML=dfStep1HTML();
+  else if(dfStep===2)body.innerHTML=dfStep2HTML();
+  else if(dfStep===3)body.innerHTML=dfStep3HTML();
+  else if(dfStep===4)body.innerHTML=dfStep4HTML();
+  dfRestaurarDados();
+}
+
+function dfStep1HTML(){
+  const canaisOpts=['Instagram','LinkedIn','Indicação','Evento','WhatsApp','Site/SEO','Parceiros','Cold Call','Email Marketing','Outro'];
+  return`
+    <div class="df-sec">01 · COMO É O FUNIL ATUAL</div>
+    <div class="df-q"><label class="df-qlbl">Como você prospecta hoje? Descreva o processo</label>
+    <textarea class="df-qi" id="df-como-prospecta" rows="2" placeholder="Ex: Faço posts no Instagram, quando alguém comenta eu mando mensagem no direct...">${dfDados.comoProspecta||''}</textarea></div>
+    <div class="df-q"><label class="df-qlbl">Como o lead chega até a reunião com você?</label>
+    <textarea class="df-qi" id="df-lead-chega" rows="2" placeholder="Ex: Ele manda mensagem, eu respondo e já marco uma call...">${dfDados.comoLeadChega||''}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="df-q"><label class="df-qlbl">Volume de leads/mês (estimativa)</label>
+      <input class="df-qi" id="df-volume" type="number" min="0" placeholder="Ex: 30" value="${dfDados.volumeMensal||''}"></div>
+      <div class="df-q"><label class="df-qlbl">Ticket médio atual (R$)</label>
+      <input class="df-qi" id="df-ticket" type="number" min="0" placeholder="Ex: 3000" value="${dfDados.ticketDeclarado||''}"></div>
+    </div>
+    <div class="df-q"><label class="df-qlbl">Onde você mais gera leads hoje?</label>
+    <div class="df-tags">${canaisOpts.map(c=>`<span class="df-tag ${(dfDados.canais||[]).includes(c)?'sel':''}" onclick="dfToggleTag(this,'${c}')">${c}</span>`).join('')}</div></div>
+    <div class="df-sec" style="margin-top:4px">02 · ETAPAS DO FUNIL (como funciona hoje)</div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Para cada etapa: quantos leads entram, % que avançam e o principal bloqueio</div>
+    <div id="df-etapas-wrap">
+    ${(dfDados.etapas||[]).map((e,i)=>`
+      <div class="df-etapa-row" id="df-et-${i}">
+        <div class="df-etapa-nm">
+          <span style="background:rgba(26,107,181,.1);color:var(--c);font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:10px">${String(i+1).padStart(2,'0')}</span>
+          <input class="df-qi" style="flex:1;padding:5px 10px;font-weight:600" id="df-et-nm-${i}" value="${e.nome||''}" placeholder="Nome da etapa">
+          ${i>2?`<button onclick="dfRemoverEtapa(${i})" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:14px;padding:0 4px">✕</button>`:''}
+        </div>
+        <div class="df-etapa-grid">
+          <div><label class="df-qlbl">Leads entrando</label><input class="df-qi" type="number" min="0" id="df-et-vol-${i}" value="${e.volume||''}" placeholder="0"></div>
+          <div><label class="df-qlbl">% que avança</label><input class="df-qi" type="number" min="0" max="100" id="df-et-conv-${i}" value="${e.conversao||''}" placeholder="0"></div>
+          <div><label class="df-qlbl">Principal bloqueio</label><input class="df-qi" id="df-et-bl-${i}" value="${e.bloqueio||''}" placeholder="Ex: não atende"></div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <button onclick="dfAddEtapa()" class="btn btn-g btn-sm" style="margin-top:4px">+ Adicionar etapa</button>
+    <div class="df-sec" style="margin-top:4px">03 · PERDAS E GARGALOS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="df-q"><label class="df-qlbl">Maior obstáculo declarado</label>
+      <input class="df-qi" id="df-gargalo" value="${dfDados.maiorGargalo||''}" placeholder="Ex: não tenho leads suficientes"></div>
+      <div class="df-q"><label class="df-qlbl">Onde perde mais vendas</label>
+      <input class="df-qi" id="df-onde-perde" value="${dfDados.ondePerde||''}" placeholder="Ex: no agendamento da reunião"></div>
+    </div>
+    <div class="df-q"><label class="df-qlbl">Taxa de conversão estimada pelo cliente (%)</label>
+    <input class="df-qi" id="df-taxa" type="number" min="0" max="100" value="${dfDados.taxaConv||''}" placeholder="Ex: 20" style="max-width:140px"></div>`;
+}
+
+function dfStep2HTML(){
+  const ticket=dfDados.ticketDeclarado||0;
+  const gargalos=dfCalcularGargalos();
+  const totalPerdido=gargalos.reduce((s,g)=>s+g.valorPerdido,0);
+  return`
+    <div class="df-sec">DIAGNÓSTICO — ONDE ESTÁ O DINHEIRO PERDIDO</div>
+    ${totalPerdido>0?`
+    <div class="df-mesa-box">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--g);margin-bottom:4px">💰 RECEITA DISPONÍVEL AGORA</div>
+      <div style="font-family:var(--ft);font-size:32px;font-weight:800;color:var(--g)">${R(totalPerdido)}</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:3px">sem contratar ninguém · só corrigindo os vazamentos abaixo</div>
+    </div>`:''}
+    ${gargalos.length?gargalos.map(g=>`
+      <div class="df-gargalo" style="--accent:${g.cor}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div class="df-gargalo-title">${g.titulo}</div>
+          <span style="font-family:var(--fm);font-size:9px;padding:2px 8px;border-radius:10px;background:${g.cor==='var(--r)'?'rgba(192,57,43,.12)':g.cor==='var(--y)'?'rgba(192,138,0,.12)':'rgba(26,107,181,.1)'};color:${g.cor};white-space:nowrap">${g.prioridade}</span>
+        </div>
+        <div class="df-gargalo-desc">${g.descricao}</div>
+        ${g.valorPerdido>0?`<div class="df-gargalo-valor" style="color:${g.cor}">↑ Potencial: ${R(g.valorPerdido)}</div>`:''}
+        ${g.etapaNome?`<div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:4px">Etapa: ${g.etapaNome}</div>`:''}
+      </div>`).join(''):`<div class="empty"><div class="empty-ic">◈</div><div class="empty-tx">Preencha o diagnóstico na etapa anterior</div></div>`}
+    <div style="margin-top:16px;background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:14px">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">OBSERVAÇÕES DO DIAGNÓSTICO (para o Pedro)</div>
+      <textarea class="df-qi" id="df-obs-diag" rows="3" placeholder="Contexto adicional, percepções da call, comportamento do cliente...">${dfDados.obsDiag||''}</textarea>
+    </div>`;
+}
+
+function dfStep3HTML(){
+  return`
+    <div class="df-sec">ENTREGA DO SISTEMA — CHECKLIST DA CALL</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:14px">Marque cada item conforme for explicando ao cliente durante a call</div>
+    <div>${DF_SISTEMA_CHECKS.map(ch=>`
+      <div class="df-check-item">
+        <input type="checkbox" id="dfck-${ch.id}" ${(dfDados.sistemaChecks||[]).includes(ch.id)?'checked':''} onchange="dfToggleCheck('${ch.id}',this.checked)">
+        <label class="df-check-label" for="dfck-${ch.id}">
+          <strong>${ch.titulo}</strong>
+          <small>${ch.desc}</small>
+        </label>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:14px;background:rgba(26,181,107,.06);border:1px solid rgba(26,181,107,.15);border-radius:10px;padding:12px 14px">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--g);margin-bottom:6px">📍 ONDE O CLIENTE ACESSA</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7">Portal do cliente: <strong style="color:var(--c)">dp-crm-cliente.vercel.app</strong><br>Aqui ele visualiza o mapa de funil, os gargalos identificados e o progresso das entregas.</div>
+    </div>`;
+}
+
+function dfStep4HTML(){
+  const gargalos=dfCalcularGargalos();
+  const top3=gargalos.slice(0,3);
+  return`
+    <div class="df-sec">PRÓXIMOS PASSOS</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:14px">Resuma com o cliente o que acontece agora e quem faz o quê</div>
+    ${top3.length?`<div style="margin-bottom:16px">${top3.map((g,i)=>`
+      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--b1)">
+        <div style="width:24px;height:24px;border-radius:50%;background:rgba(26,107,181,.1);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:11px;font-weight:700;color:var(--c);flex-shrink:0">${i+1}</div>
+        <div><div style="font-size:13px;font-weight:600;color:var(--tx)">${g.titulo}</div><div style="font-size:11px;color:var(--t2);margin-top:2px">${g.acao}</div></div>
+      </div>`).join('')}
+    </div>`:''}
+    <div class="df-q"><label class="df-qlbl">Combinados da call (o que cada um vai fazer)</label>
+    <textarea class="df-qi" id="df-proximos" rows="4" placeholder="Ex: Cliente vai abrir o CRM hoje e cadastrar 3 leads. DP entrega script até amanhã. Reunião de follow-up segunda às 10h...">${dfDados.proximosPassos||''}</textarea></div>
+    <div style="background:rgba(26,107,181,.06);border:1px solid rgba(26,107,181,.15);border-radius:10px;padding:14px;margin-top:8px">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--c);margin-bottom:6px">✓ AO CONCLUIR</div>
+      <ul style="font-size:12px;color:var(--t2);line-height:1.9;padding-left:16px">
+        <li>Reunião 2 marcada como <strong>Entregue</strong> automaticamente</li>
+        <li>Mapa Comercial populado com as etapas do funil</li>
+        <li>Relatório disponível para o Pedro revisar</li>
+        <li>Cliente visualiza o diagnóstico no portal</li>
+      </ul>
+    </div>`;
+}
+
+function dfToggleTag(el,canal){
+  el.classList.toggle('sel');
+  if(!dfDados.canais)dfDados.canais=[];
+  if(el.classList.contains('sel')){if(!dfDados.canais.includes(canal))dfDados.canais.push(canal);}
+  else{dfDados.canais=dfDados.canais.filter(c=>c!==canal);}
+}
+function dfToggleCheck(id,checked){
+  if(!dfDados.sistemaChecks)dfDados.sistemaChecks=[];
+  if(checked){if(!dfDados.sistemaChecks.includes(id))dfDados.sistemaChecks.push(id);}
+  else{dfDados.sistemaChecks=dfDados.sistemaChecks.filter(c=>c!==id);}
+}
+function dfAddEtapa(){
+  dfColherDados();
+  dfDados.etapas.push({nome:'Nova Etapa',volume:0,conversao:0,bloqueio:''});
+  dfRenderStep();
+}
+function dfRemoverEtapa(i){
+  dfColherDados();
+  dfDados.etapas.splice(i,1);
+  dfRenderStep();
+}
+
+function dfColherDados(){
+  if(dfStep===1){
+    dfDados.comoProspecta=document.getElementById('df-como-prospecta')?.value||'';
+    dfDados.comoLeadChega=document.getElementById('df-lead-chega')?.value||'';
+    dfDados.volumeMensal=+document.getElementById('df-volume')?.value||0;
+    dfDados.ticketDeclarado=+document.getElementById('df-ticket')?.value||0;
+    dfDados.maiorGargalo=document.getElementById('df-gargalo')?.value||'';
+    dfDados.ondePerde=document.getElementById('df-onde-perde')?.value||'';
+    dfDados.taxaConv=+document.getElementById('df-taxa')?.value||0;
+    // etapas
+    const n=dfDados.etapas.length;
+    for(let i=0;i<n;i++){
+      dfDados.etapas[i].nome=document.getElementById(`df-et-nm-${i}`)?.value||dfDados.etapas[i].nome;
+      dfDados.etapas[i].volume=+document.getElementById(`df-et-vol-${i}`)?.value||0;
+      dfDados.etapas[i].conversao=+document.getElementById(`df-et-conv-${i}`)?.value||0;
+      dfDados.etapas[i].bloqueio=document.getElementById(`df-et-bl-${i}`)?.value||'';
+    }
+  } else if(dfStep===2){
+    dfDados.obsDiag=document.getElementById('df-obs-diag')?.value||'';
+  } else if(dfStep===4){
+    dfDados.proximosPassos=document.getElementById('df-proximos')?.value||'';
+  }
+}
+
+function dfRestaurarDados(){
+  // canais — já restaurados via HTML (sel class)
+  // checks — já restaurados via HTML (checked attr)
+}
+
+function dfCalcularGargalos(){
+  const ticket=dfDados.ticketDeclarado||0;
+  const gargalos=[];
+  // Gargalo por etapa com conversão baixa
+  (dfDados.etapas||[]).forEach((e,i)=>{
+    const vol=parseInt(e.volume)||0;const conv=parseFloat(e.conversao)||0;
+    if(vol>0&&conv<50&&conv>0){
+      const potencial=70;const leadsRecup=Math.round(vol*(potencial-conv)/100);const valor=leadsRecup*ticket;
+      gargalos.push({titulo:`Vazamento em "${e.nome}"`,descricao:`Apenas ${conv}% dos ${vol} leads avançam. ${e.bloqueio?'Principal bloqueio: '+e.bloqueio+'.':''} Elevando para ${potencial}%, seriam mais ${leadsRecup} negócios por ciclo.`,prioridade:conv<30?'URGENTE':'ESTA SEMANA',cor:conv<30?'var(--r)':'var(--y)',valorPerdido:valor,etapaNome:e.nome,acao:`Trabalhar o bloqueio na etapa ${e.nome}: ${e.bloqueio||'identificar objeção principal'}`});
+    }
+  });
+  // Gargalo: onde perde venda
+  if(dfDados.ondePerde&&dfDados.ondePerde.length>3){
+    const vol=parseInt((dfDados.etapas||[])[0]?.volume)||0;
+    const valor=Math.round(vol*0.15)*ticket;
+    gargalos.push({titulo:`Ponto de perda: "${dfDados.ondePerde}"`,descricao:`O cliente identificou que perde vendas ${dfDados.ondePerde.toLowerCase()}. Esse é o ponto de maior sangramento do funil — cada lead perdido aqui já custou esforço de captação.`,prioridade:'ALTA',cor:'var(--r)',valorPerdido:valor,etapaNome:'',acao:'Mapear os últimos 5 leads perdidos nessa etapa e identificar o padrão'});
+  }
+  // Gargalo: sem prospecção estruturada
+  if(!dfDados.comoProspecta||dfDados.comoProspecta.length<10){
+    gargalos.push({titulo:'Sem processo de prospecção estruturado',descricao:'O negócio cresce apenas quando alguém aparece. Montar uma cadência ativa de 10 contatos/dia cria previsibilidade de receita.',prioridade:'ALTA',cor:'var(--r)',valorPerdido:0,etapaNome:'',acao:'Estruturar lista de ICP e cadência de 10 contatos/dia'});
+  }
+  // Gargalo: volume baixo
+  if((dfDados.volumeMensal||0)<20&&(dfDados.volumeMensal||0)>0){
+    const valor=(20-dfDados.volumeMensal)*ticket*(dfDados.taxaConv||20)/100;
+    gargalos.push({titulo:'Volume de leads abaixo do necessário',descricao:`Apenas ${dfDados.volumeMensal} leads/mês é insuficiente para gerar previsibilidade. Com ticket de ${R(ticket)}, são necessários pelo menos 20 leads qualificados para sustentar o crescimento.`,prioridade:'ESTA SEMANA',cor:'var(--y)',valorPerdido:valor,etapaNome:'',acao:'Aumentar volume para mínimo 20 leads/mês via prospecção ativa'});
+  }
+  // Gargalo: taxa de conversão baixa
+  if((dfDados.taxaConv||0)>0&&(dfDados.taxaConv||0)<15){
+    const vol=dfDados.volumeMensal||0;const valor=Math.round(vol*(25-dfDados.taxaConv)/100)*ticket;
+    gargalos.push({titulo:`Taxa de conversão baixa (${dfDados.taxaConv}%)`,descricao:`Com ${dfDados.taxaConv}% de conversão, a maioria dos leads que entram no funil não vira receita. O padrão saudável é 20–30%. O gap pode estar no script, no ICP errado ou na qualificação.`,prioridade:'ALTA',cor:'var(--r)',valorPerdido:valor,etapaNome:'',acao:'Revisar script e critérios de qualificação de lead'});
+  }
+  // Ordena por valor perdido
+  return gargalos.sort((a,b)=>b.valorPerdido-a.valorPerdido).slice(0,6);
+}
+
+function dfNext(){
+  dfColherDados();
+  if(dfStep===1){
+    // validação mínima
+    if(!dfDados.comoProspecta&&!dfDados.volumeMensal){toast('Preencha pelo menos como prospecta ou o volume de leads','wrn');return;}
+  }
+  dfStep++;dfRenderStep();
+  dfSalvarRascunho(true);
+}
+function dfPrev(){dfColherDados();dfStep--;dfRenderStep();}
+
+async function dfSalvarRascunho(silencioso=false){
+  dfColherDados();
+  const payload={
+    empresa_id:EMPRESA_ID,cliente_id:dfClienteId,
+    como_prospecta:dfDados.comoProspecta,como_lead_chega:dfDados.comoLeadChega,
+    ticket_medio_declarado:dfDados.ticketDeclarado||0,volume_mensal_leads:dfDados.volumeMensal||0,
+    etapas_atuais:dfDados.etapas||[],canais_aquisicao:dfDados.canais||[],
+    maior_gargalo:dfDados.maiorGargalo,onde_perde_venda:dfDados.ondePerde,
+    taxa_conversao_estimada:dfDados.taxaConv||0,sistema_checks:dfDados.sistemaChecks||[],
+    proximos_passos:dfDados.proximosPassos||'',
+    gargalos_calculados:dfCalcularGargalos(),
+    receita_perdida_estimada:dfCalcularGargalos().reduce((s,g)=>s+g.valorPerdido,0),
+    status:'rascunho',atualizado_em:new Date().toISOString()
+  };
+  if(dfSessaoId){
+    await sb.from('diag_funil_sessoes').update(payload).eq('id',dfSessaoId);
+  } else {
+    const{data}=await sb.from('diag_funil_sessoes').insert(payload).select().single();
+    if(data)dfSessaoId=data.id;
+  }
+  if(!silencioso){
+    document.getElementById('df-save-status').textContent='✓ Salvo '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    toast('✓ Rascunho salvo');
+  }
+}
+
+async function dfConcluir(){
+  dfColherDados();
+  if(!dfDados.proximosPassos){toast('Registre os próximos passos antes de concluir','wrn');return;}
+  const gargalos=dfCalcularGargalos();
+  const receitaPerdida=gargalos.reduce((s,g)=>s+g.valorPerdido,0);
+
+  // 1. Salvar sessão como concluída
+  const payload={
+    empresa_id:EMPRESA_ID,cliente_id:dfClienteId,
+    como_prospecta:dfDados.comoProspecta,como_lead_chega:dfDados.comoLeadChega,
+    ticket_medio_declarado:dfDados.ticketDeclarado||0,volume_mensal_leads:dfDados.volumeMensal||0,
+    etapas_atuais:dfDados.etapas||[],canais_aquisicao:dfDados.canais||[],
+    maior_gargalo:dfDados.maiorGargalo,onde_perde_venda:dfDados.ondePerde,
+    taxa_conversao_estimada:dfDados.taxaConv||0,sistema_checks:dfDados.sistemaChecks||[],
+    proximos_passos:dfDados.proximosPassos,
+    gargalos_calculados:gargalos,receita_perdida_estimada:receitaPerdida,
+    status:'concluido',concluido_em:new Date().toISOString(),atualizado_em:new Date().toISOString()
+  };
+  if(dfSessaoId){await sb.from('diag_funil_sessoes').update(payload).eq('id',dfSessaoId);}
+  else{const{data}=await sb.from('diag_funil_sessoes').insert(payload).select().single();if(data)dfSessaoId=data.id;}
+
+  // 2. Criar/atualizar mapa comercial com as etapas preenchidas
+  await dfPopularMapa(gargalos);
+
+  // 3. Marcar reunião 2 como entregue
+  const c=clientesAtivos.find(x=>String(x.id)===String(dfClienteId));
+  if(c){
+    const r2=c.reunioes.find(r=>r.n===2);
+    if(r2){r2.status='entregue';r2.data=new Date().toISOString().slice(0,10);}
+    await saveClienteToDB(c);
+    renderClientes();
+  }
+
+  closeM('m-diag-funil');
+  toast('✓ Diagnóstico concluído! Mapa e reunião atualizados.');
+}
+
+async function dfPopularMapa(gargalos){
+  // Cria ou recupera mapa
+  const{data:mapas}=await sb.from('mapa_comercial').select('id').eq('cliente_id',dfClienteId).limit(1);
+  let mapaId;
+  if(mapas?.length){mapaId=mapas[0].id;await sb.from('mapa_comercial').update({ticket_medio:dfDados.ticketDeclarado||0,atualizado_em:new Date().toISOString()}).eq('id',mapaId);}
+  else{const{data:m}=await sb.from('mapa_comercial').insert({cliente_id:dfClienteId,empresa_id:EMPRESA_ID,ticket_medio:dfDados.ticketDeclarado||0}).select().single();mapaId=m.id;}
+  // Remove etapas antigas e recria
+  await sb.from('mapa_comercial_etapas').delete().eq('mapa_id',mapaId);
+  const etapasBulk=(dfDados.etapas||[]).map((e,i)=>{
+    const gargalo=gargalos.find(g=>g.etapaNome===e.nome);
+    const pot=gargalo?Math.min((e.conversao||0)+20,95):Math.min((e.conversao||0)+5,95);
+    return{mapa_id:mapaId,cliente_id:dfClienteId,empresa_id:EMPRESA_ID,ordem:i+1,nome:e.nome,volume_entrada:e.volume||0,taxa_conversao_atual:e.conversao||0,taxa_conversao_potencial:pot};
+  });
+  if(etapasBulk.length)await sb.from('mapa_comercial_etapas').insert(etapasBulk);
+}
+
+// Relatório para Pedro — acessível dentro do cliente
+async function abrirRelatorioDiag(clienteId,clienteNome){
+  const{data:sess}=await sb.from('diag_funil_sessoes').select('*').eq('cliente_id',clienteId).order('criado_em',{ascending:false}).limit(1);
+  const body=document.getElementById('rel-diag-body');
+  if(!sess?.length){body.innerHTML='<div class="empty"><div class="empty-ic">◈</div><div class="empty-tx">Nenhum diagnóstico realizado ainda</div></div>';openM('m-rel-diag');return;}
+  const d=sess[0];const gargalos=d.gargalos_calculados||[];
+  const statusBadge=d.status==='concluido'?'<span style="background:rgba(26,181,107,.12);color:var(--g);border:1px solid rgba(26,181,107,.25);font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:10px">✓ Concluído</span>':'<span style="background:rgba(192,138,0,.1);color:var(--y);border:1px solid rgba(192,138,0,.2);font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:10px">○ Rascunho</span>';
+  body.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-family:var(--ft);font-size:16px;font-weight:800">${clienteNome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm);margin-top:2px">${d.concluido_em?'Concluído em '+new Date(d.concluido_em).toLocaleDateString('pt-BR'):new Date(d.criado_em).toLocaleDateString('pt-BR')}</div></div>
+      ${statusBadge}
+    </div>
+    ${d.receita_perdida_estimada>0?`<div style="background:linear-gradient(135deg,rgba(26,181,107,.08),rgba(26,107,181,.04));border:1px solid rgba(26,181,107,.2);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div><div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--g);margin-bottom:3px">RECEITA DISPONÍVEL</div><div style="font-family:var(--ft);font-size:26px;font-weight:800;color:var(--g)">${R(d.receita_perdida_estimada)}</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:center">
+        <div><div style="font-family:var(--fm);font-size:16px;font-weight:800;color:var(--r)">${gargalos.length}</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">gargalos</div></div>
+        <div><div style="font-family:var(--fm);font-size:16px;font-weight:800;color:var(--c)">${d.volume_mensal_leads||0}</div><div style="font-family:var(--fm);font-size:9px;color:var(--t2)">leads/mês</div></div>
+      </div>
+    </div>`:''}
+    <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">FUNIL ATUAL</div>
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:var(--t2)">
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Como prospecta</strong>${d.como_prospecta||'—'}</div>
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Como o lead chega</strong>${d.como_lead_chega||'—'}</div>
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Ticket médio declarado</strong>${R(d.ticket_medio_declarado||0)}</div>
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Taxa de conversão</strong>${d.taxa_conversao_estimada||0}%</div>
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Maior gargalo</strong>${d.maior_gargalo||'—'}</div>
+      <div><strong style="color:var(--tx);display:block;margin-bottom:2px">Onde perde venda</strong>${d.onde_perde_venda||'—'}</div>
+    </div>
+    ${gargalos.length?`<div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:8px">GARGALOS IDENTIFICADOS</div>
+    ${gargalos.map(g=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:11px 14px;margin-bottom:7px;border-left:3px solid ${g.cor}">
+      <div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:3px">${g.titulo}</div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.5">${g.descricao}</div>
+      ${g.valorPerdido>0?`<div style="font-family:var(--fm);font-size:11px;color:var(--g);margin-top:4px">↑ ${R(g.valorPerdido)} recuperáveis</div>`:''}
+      <div style="font-family:var(--fm);font-size:10px;color:var(--c);margin-top:4px">→ ${g.acao}</div>
+    </div>`).join('')}`:''}
+    ${d.proximos_passos?`<div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);margin:14px 0 8px">PRÓXIMOS PASSOS COMBINADOS</div>
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--t2);line-height:1.7">${d.proximos_passos.replace(/\n/g,'<br>')}</div>`:''}
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-p btn-sm" onclick="abrirDiagFunil('${clienteId}','${clienteNome.replace(/'/g,"\\'")}');closeM('m-rel-diag')">✎ Editar Diagnóstico</button>
+      <button class="btn btn-g btn-sm" onclick="abrirMapaComercial('${clienteId}','${clienteNome.replace(/'/g,"\\'")}');closeM('m-rel-diag')">◈ Ver Mapa Comercial</button>
+    </div>`;
+  openM('m-rel-diag');
+}
 let mcMapa=null,mcClienteId=null,mcEtapaInterId=null,mcTicket=0,mcEtapas=[];
 
 function R2(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0}).format(v);}
@@ -3563,6 +3998,70 @@ async function mcPublicar(status){
 </script>
 <!-- MODAL ETAPA MAPA COMERCIAL -->
 <div class="modal" id="m-mc-etapa">
+  <div class="mbox" style="max-width:460px">
+    <div class="mhd"><div class="mtl">◈ Editar Etapa</div><button class="mcl" onclick="closeM('m-mc-etapa')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="mce-id">
+      <div class="fg"><label class="fl">Nome da etapa</label><input class="fi" id="mce-nome" placeholder="ex: Apresentação"></div>
+      <div class="fg"><label class="fl">Volume de entrada (leads)</label><input class="fi" id="mce-vol" type="number" min="0" placeholder="0"></div>
+      <div class="fg">
+        <label class="fl">Taxa de conversão atual: <span id="mce-taxa-lbl" style="color:var(--c)">0%</span></label>
+        <input type="range" id="mce-taxa" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--c)" oninput="document.getElementById('mce-taxa-lbl').textContent=this.value+'%'">
+      </div>
+      <div class="fg">
+        <label class="fl">Taxa de conversão potencial: <span id="mce-pot-lbl" style="color:var(--g)">0%</span></label>
+        <input type="range" id="mce-pot" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--g)" oninput="document.getElementById('mce-pot-lbl').textContent=this.value+'%'">
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-g" onclick="closeM('m-mc-etapa')">Cancelar</button>
+      <button class="btn btn-p" onclick="mcSalvarEtapa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DIAGNÓSTICO DE FUNIL ══ -->
+<div class="modal" id="m-diag-funil">
+<div class="mbox" style="max-width:720px;max-height:92vh">
+<div class="mhd" style="background:linear-gradient(135deg,rgba(26,107,181,.06),rgba(26,181,107,.04));border-bottom:1px solid var(--b1)">
+  <div>
+    <div class="mtl" style="display:flex;align-items:center;gap:8px">◈ Diagnóstico de Funil <span id="df-cliente-nm" style="font-weight:400;color:var(--t2);font-size:13px"></span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:6px" id="df-steps-bar">
+      <div class="df-step on" data-s="1" onclick="dfGoStep(1)">1 · Funil Atual</div>
+      <div style="height:1px;flex:1;background:var(--b1)"></div>
+      <div class="df-step" data-s="2" onclick="dfGoStep(2)">2 · Gargalos</div>
+      <div style="height:1px;flex:1;background:var(--b1)"></div>
+      <div class="df-step" data-s="3" onclick="dfGoStep(3)">3 · Entrega</div>
+      <div style="height:1px;flex:1;background:var(--b1)"></div>
+      <div class="df-step" data-s="4" onclick="dfGoStep(4)">4 · Próx. Passos</div>
+    </div>
+  </div>
+  <button class="mcl" onclick="closeM('m-diag-funil')">✕</button>
+</div>
+<div class="mbody" id="df-body" style="padding:20px 24px"></div>
+<div class="mft">
+  <button class="btn btn-g" id="df-btn-prev" onclick="dfPrev()" style="display:none">← Anterior</button>
+  <div style="flex:1;display:flex;align-items:center;gap:6px">
+    <button class="btn btn-g btn-sm" onclick="dfSalvarRascunho()" id="df-btn-rascunho">💾 Salvar Rascunho</button>
+    <span id="df-save-status" style="font-family:var(--fm);font-size:10px;color:var(--t3)"></span>
+  </div>
+  <button class="btn btn-p" id="df-btn-next" onclick="dfNext()">Próximo →</button>
+  <button class="btn btn-p" id="df-btn-concluir" onclick="dfConcluir()" style="display:none;background:var(--g);color:#000">✓ Concluir Diagnóstico</button>
+</div>
+</div>
+</div>
+
+<!-- ══ MODAL RELATÓRIO DIAGNÓSTICO (Pedro) ══ -->
+<div class="modal" id="m-rel-diag">
+<div class="mbox" style="max-width:680px">
+  <div class="mhd"><div class="mtl">◈ Relatório de Diagnóstico</div><button class="mcl" onclick="closeM('m-rel-diag')">✕</button></div>
+  <div class="mbody" id="rel-diag-body" style="padding:20px 24px"></div>
+  <div class="mft"><button class="btn btn-g" onclick="closeM('m-rel-diag')">Fechar</button></div>
+</div>
+</div>
+
+</body>
+</html>
   <div class="mbox" style="max-width:460px">
     <div class="mhd"><div class="mtl">◈ Editar Etapa</div><button class="mcl" onclick="closeM('m-mc-etapa')">✕</button></div>
     <div class="mbody">
