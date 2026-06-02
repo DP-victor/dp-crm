@@ -557,7 +557,7 @@ tr:last-child td{border-bottom:none}
       <div class="vp" id="dash-fin_rh">
 
         <!-- KPIs financeiros hero -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px">
           <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--c)"></div>
             <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">FATURAMENTO</div>
@@ -569,6 +569,13 @@ tr:last-child td{border-bottom:none}
             <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">LUCRO LÍQUIDO</div>
             <div style="font-family:var(--ft);font-size:26px;font-weight:800;" id="df-lucro">R$ 0</div>
             <div style="font-size:11px;color:var(--t2);margin-top:4px" id="df-lucro-sub">após impostos e custos</div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--p)"></div>
+            <div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">EBITDA</div>
+            <div style="font-family:var(--ft);font-size:26px;font-weight:800;" id="df-ebitda">R$ 0</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:4px" id="df-ebitda-sub">resultado operacional</div>
+            <div style="margin-top:8px;height:4px;background:var(--s3);border-radius:2px;overflow:hidden"><div id="df-ebitda-bar" style="height:100%;border-radius:2px;background:var(--p);width:0%;transition:width .8s ease"></div></div>
           </div>
           <div style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;text-align:center;position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--y)"></div>
@@ -598,6 +605,12 @@ tr:last-child td{border-bottom:none}
             <div class="card-h"><div class="card-t">👥 RH — Time</div></div>
             <div id="df-rh"></div>
           </div>
+        </div>
+
+        <!-- EBITDA VISUAL -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-h"><div class="card-t">◈ EBITDA — Composição</div><div class="badge" id="df-ebitda-badge">—</div></div>
+          <div id="df-ebitda-breakdown"></div>
         </div>
 
         <!-- RECEITA POR ORIGEM + CUSTOS -->
@@ -1588,14 +1601,15 @@ function renderLeads(){
   const f=base.filter(l=>(!q||l.nome.toLowerCase().includes(q)||l.vendedor.toLowerCase().includes(q)||l.origem.toLowerCase().includes(q))&&(!fs||(fs==='ativo'?l.status==='ativo':l.status===fs))&&(!ft||l.temp===ft)&&(!fe||String(l.ordem)===fe));
   document.getElementById('leadsBadge').textContent=f.length+' leads';
   document.getElementById('leadsTbody').innerHTML=f.map(l=>`<tr>
-    <td class="tdm">${l.nome}</td><td>${l.origem}</td>
+    <td><input class="ei" value="${(l.nome||'').replace(/"/g,'&quot;')}" placeholder="Nome" onchange="updateLead(${l.id},'nome',this.value)" style="min-width:110px;font-weight:600;color:var(--tx)"></td>
+    <td><input class="ei" value="${(l.origem||'').replace(/"/g,'&quot;')}" placeholder="Origem" onchange="updateLead(${l.id},'origem',this.value)" style="min-width:80px"></td>
     <td><input class="ei" value="${l.vendedor||''}" placeholder="Closer" onchange="updateLead(${l.id},'vendedor',this.value)" style="min-width:80px"></td>
     <td><input class="ei" value="${l.prospectador||''}" placeholder="BDR/SDR" onchange="updateLead(${l.id},'prospectador',this.value)" style="min-width:80px"></td>
     <td><select class="es" onchange="updateLead(${l.id},'ordem',+this.value)">${[1,2,3,4,5].map(n=>`<option value="${n}"${n===l.ordem?' selected':''}>${EN[n]}</option>`).join('')}</select></td>
     <td><select class="es" onchange="updateLead(${l.id},'temp',this.value)">${['','quente','morno','frio'].map(t=>`<option value="${t}"${t===l.temp?' selected':''}>${t?({quente:'🔥',morno:'🌡',frio:'❄'}[t]+' '+t):'—'}</option>`).join('')}</select></td>
     <td><select class="es" onchange="updateLead(${l.id},'status',this.value)"><option value="ativo"${l.status==='ativo'?' selected':''}>● Ativo</option><option value="venda"${l.status==='venda'?' selected':''}>✓ Venda</option><option value="perdido"${l.status==='perdido'?' selected':''}>✗ Perdido</option></select></td>
     <td><input class="ei" type="number" value="${l.receita||''}" placeholder="0" onchange="updateLead(${l.id},'receita',+this.value)" style="width:88px"></td>
-    <td style="font-family:var(--fm);font-size:11px;color:var(--t2)">${fmtDate(l.conexao)}</td>
+    <td><input class="ei" type="date" value="${l.conexao||''}" onchange="updateLead(${l.id},'conexao',this.value)" style="min-width:110px;font-family:var(--fm);font-size:11px"></td>
     <td><button class="btn btn-r btn-xs" onclick="deleteLead(${l.id})">✕</button></td>
   </tr>`).join('');
 }
@@ -2815,10 +2829,53 @@ function renderDashFinRH(ls){
   const margem=liq>0?(lucro/liq)*100:0;
   const ticket=s.vendas>0?s.receita/s.vendas:0;
 
+  // EBITDA = Resultado Operacional (Rec.Líq. - Custos Fixos) — sem D&A separado
+  const ebitda=lucro;
+  const margemEbitda=liq>0?(ebitda/liq)*100:0;
+
   const dfFat=document.getElementById('df-fat');if(dfFat)dfFat.textContent=R(s.receita);
   const dfFatSub=document.getElementById('df-fat-sub');if(dfFatSub)dfFatSub.textContent=s.vendas+' venda'+(s.vendas!==1?'s':'')+' · líq. '+R(liq);
   const dfLucro=document.getElementById('df-lucro');if(dfLucro){dfLucro.textContent=R(lucro);dfLucro.style.color=lucro>=0?'var(--g)':'var(--r)';}
   const dfLucroSub=document.getElementById('df-lucro-sub');if(dfLucroSub)dfLucroSub.textContent='após impostos e custos fixos';
+
+  // EBITDA card
+  const dfEbitda=document.getElementById('df-ebitda');
+  if(dfEbitda){dfEbitda.textContent=R(ebitda);dfEbitda.style.color=ebitda>=0?'var(--p)':'var(--r)';}
+  const dfEbitdaSub=document.getElementById('df-ebitda-sub');
+  if(dfEbitdaSub)dfEbitdaSub.textContent='margem '+margemEbitda.toFixed(1)+'%';
+  const dfEbitdaBar=document.getElementById('df-ebitda-bar');
+  if(dfEbitdaBar){dfEbitdaBar.style.width=Math.min(Math.max(margemEbitda,0),100)+'%';dfEbitdaBar.style.background=margemEbitda>=20?'var(--p)':margemEbitda>=0?'var(--y)':'var(--r)';}
+  const dfEbitdaBadge=document.getElementById('df-ebitda-badge');
+  if(dfEbitdaBadge)dfEbitdaBadge.textContent='margem '+margemEbitda.toFixed(1)+'%';
+
+  // EBITDA breakdown visual
+  const ebitdaEl=document.getElementById('df-ebitda-breakdown');
+  if(ebitdaEl){
+    const rows=[
+      {l:'(+) Receita Bruta',v:s.receita,c:'var(--c)',pct:100},
+      {l:'(-) Impostos ('+taxRate+'%)',v:-(s.receita*tax),c:'var(--r)',pct:(s.receita*tax/(s.receita||1))*100},
+      {l:'(=) Receita Líquida',v:liq,c:'var(--c3)',pct:(liq/(s.receita||1))*100},
+      {l:'(-) Custos Fixos',v:-totalCustos,c:'var(--o)',pct:(totalCustos/(s.receita||1))*100},
+      {l:'(=) EBITDA',v:ebitda,c:ebitda>=0?'var(--p)':'var(--r)',pct:Math.abs(margemEbitda)},
+    ];
+    ebitdaEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'+
+      '<div>'+rows.map(r=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b1)"><span style="font-size:12px;color:var(--t2)">'+r.l+'</span><span style="font-family:var(--fm);font-size:13px;font-weight:700;color:'+r.c+'">'+R(r.v)+'</span></div>').join('')+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;justify-content:center;gap:10px">'+
+        '<div style="text-align:center;padding:20px;background:var(--s2);border:1px solid var(--b1);border-radius:12px;border-top:3px solid '+(ebitda>=0?'var(--p)':'var(--r)')+'">' +
+          '<div style="font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t3);margin-bottom:8px">EBITDA</div>' +
+          '<div style="font-family:var(--ft);font-size:34px;font-weight:800;color:'+(ebitda>=0?'var(--p)':'var(--r)')+'">'+R(ebitda)+'</div>'+
+          '<div style="font-family:var(--fm);font-size:11px;color:var(--t2);margin-top:6px">margem '+margemEbitda.toFixed(1)+'%</div>'+
+          '<div style="margin-top:10px;height:6px;background:var(--s3);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+(margemEbitda>=20?'var(--p)':margemEbitda>=0?'var(--y)':'var(--r)')+';width:'+Math.min(Math.max(margemEbitda,0),100)+'%;transition:width .8s ease"></div></div>'+
+          '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+            '<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:8px;text-align:center"><div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:3px">MARGEM EBITDA</div><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:'+(margemEbitda>=20?'var(--p)':'var(--y)')+'">'+margemEbitda.toFixed(1)+'%</div></div>'+
+            '<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:8px;text-align:center"><div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:3px">REFERÊNCIA</div><div style="font-family:var(--ft);font-size:16px;font-weight:800;color:var(--t2)">'+(margemEbitda>=25?'✓ SAUDÁVEL':margemEbitda>=10?'⚠ REGULAR':'✗ CRÍTICO')+'</div></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
   const dfMargem=document.getElementById('df-margem');if(dfMargem){dfMargem.textContent=margem.toFixed(1)+'%';dfMargem.style.color=margem>=20?'var(--g)':margem>=0?'var(--y)':'var(--r)';}
   const dfMargemBar=document.getElementById('df-margem-bar');if(dfMargemBar){dfMargemBar.style.width=Math.min(Math.max(margem,0),100)+'%';dfMargemBar.style.background=margem>=20?'var(--g)':'var(--y)';}
   const dfTicket=document.getElementById('df-ticket');if(dfTicket)dfTicket.textContent=R(ticket);
