@@ -1613,7 +1613,115 @@ function renderLeads(){
     <td><button class="btn btn-r btn-xs" onclick="deleteLead(${l.id})">✕</button></td>
   </tr>`).join('');
 }
-function updateLead(id,f,v){const l=leads.find(l=>l.id===id);if(!l)return;l[f]=v;saveLeadToDB(l).then(ok=>{if(ok){toast('✓ '+l.nome+' atualizado');leadsFiltrados=[...leads];aplicarFiltro();}});}
+// ── UTILITÁRIOS: fuso Brasília ──
+function getDataBrasiliaISO(){
+  const agora=new Date();
+  // Brasília = UTC-3, fixo (sem horário de verão desde 2019)
+  const brasilia=new Date(agora.getTime()+agora.getTimezoneOffset()*60000-3*3600000);
+  const a=brasilia.getFullYear(),m=String(brasilia.getMonth()+1).padStart(2,'0'),d=String(brasilia.getDate()).padStart(2,'0');
+  return`${a}-${m}-${d}`;
+}
+
+// ── PROJEÇÃO AUTOMÁTICA NO FLUXO DE CAIXA AO FECHAR VENDA ──
+async function projetarVendaNoFluxoCaixa(lead){
+  // Evita duplicata: verifica se já existe lançamento para este lead
+  const{data:jaExiste}=await sb.from('financeiro').select('id').eq('empresa_id',EMPRESA_ID).eq('lead_id',lead.id).eq('tipo','entrada').eq('categoria','receita');
+  if(jaExiste&&jaExiste.length>0){toast('ℹ️ Fluxo de caixa já atualizado para esta venda.','');return{duplicata:true};}
+
+  // Data base: usa d1p (data 1ª parcela) se existir, senão conexao, senão hoje em Brasília
+  let dataBase;
+  const dataRef=lead.d1p||lead.conexao;
+  if(dataRef&&dataRef.match(/^\d{4}-\d{2}-\d{2}$/)){
+    const p=dataRef.split('-');
+    dataBase=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  }else{
+    const h=getDataBrasiliaISO().split('-');
+    dataBase=new Date(parseInt(h[0]),parseInt(h[1])-1,parseInt(h[2]));
+  }
+
+  const receita=parseFloat(lead.receita)||0;
+  if(receita<=0){toast('⚠ Venda marcada sem valor — adicione a receita para projetar o fluxo.','wrn');return{semValor:true};}
+
+  const taxa=parseFloat(lead.taxa)||0;
+  const numParc=parseInt(lead.parc)||1;
+  const meses=parseInt(lead.meses)||1;
+  const recorr=lead.recorr||false;
+  const meio=lead.meio||'pix';
+  const fator=1-(taxa/100);
+  const valorLiq=parseFloat((receita*fator).toFixed(2));
+  const total=recorr?meses:numParc;
+
+  const lancamentos=[];
+  for(let i=0;i<total;i++){
+    const venc=new Date(dataBase.getFullYear(),dataBase.getMonth()+i,dataBase.getDate());
+    const vencISO=`${venc.getFullYear()}-${String(venc.getMonth()+1).padStart(2,'0')}-${String(venc.getDate()).padStart(2,'0')}`;
+    const comp=`${String(venc.getMonth()+1).padStart(2,'0')}/${venc.getFullYear()}`;
+    const desc=total>1?`${lead.nome} — Parcela ${i+1}/${total}`:(lead.nome||`Lead #${lead.id}`);
+    lancamentos.push({
+      empresa_id:EMPRESA_ID,lead_id:lead.id,descricao:desc,tipo:'entrada',categoria:'receita',
+      valor:valorLiq,valor_bruto:receita,taxa_percentual:taxa,status:'pendente',
+      vencimento:vencISO,competencia:comp,meio_pagamento:meio,parcelas:total,parcela_atual:i+1
+    });
+  }
+
+  const{error}=await sb.from('financeiro').insert(lancamentos);
+  if(error){console.error('[FluxoCaixa] Erro:',error);return{sucesso:false};}
+  await loadEntradas();
+  return{sucesso:true,lancamentos:total,dataBase:dataBase.toISOString().slice(0,10)};
+}
+
+async function removerProjecaoFluxo(leadId){
+  await sb.from('financeiro').delete().eq('empresa_id',EMPRESA_ID).eq('lead_id',leadId).eq('tipo','entrada').eq('categoria','receita').eq('status','pendente');
+  await loadEntradas();
+}
+
+function updateLead(id,f,v){
+  const l=leads.find(l=>l.id===id);if(!l)return;
+  const statusAnterior=l.status;
+  l[f]=v;
+
+  // Se mudou STATUS para 'venda' → projeta no fluxo de caixa
+  if(f==='status'&&v==='venda'){
+    // Garante data conexao = hoje em Brasília se não tiver
+    if(!l.conexao)l.conexao=getDataBrasiliaISO();
+    saveLeadToDB(l).then(async ok=>{
+      if(!ok)return;
+      leadsFiltrados=[...leads];aplicarFiltro();
+      const res=await projetarVendaNoFluxoCaixa(l);
+      if(res&&res.sucesso){
+        const dFmt=res.dataBase?res.dataBase.split('-').reverse().join('/'):'';
+        toast(`✅ Venda registrada! ${res.lancamentos} parcela(s) projetada(s) no fluxo a partir de ${dFmt}`);
+      }
+    });
+    return;
+  }
+
+  // Se mudou STATUS de 'venda' para outro → remove projeções pendentes
+  if(f==='status'&&v!=='venda'&&statusAnterior==='venda'){
+    saveLeadToDB(l).then(async ok=>{
+      if(!ok)return;
+      await removerProjecaoFluxo(id);
+      leadsFiltrados=[...leads];aplicarFiltro();
+      toast(`✓ ${l.nome} atualizado — projeções pendentes removidas`);
+    });
+    return;
+  }
+
+  // Se mudou conexao/d1p de um lead já em venda → re-projeta
+  if((f==='conexao'||f==='d1p')&&l.status==='venda'&&v){
+    saveLeadToDB(l).then(async ok=>{
+      if(!ok)return;
+      await removerProjecaoFluxo(id);
+      const res=await projetarVendaNoFluxoCaixa(l);
+      leadsFiltrados=[...leads];aplicarFiltro();
+      if(res&&res.sucesso){const dFmt=res.dataBase?res.dataBase.split('-').reverse().join('/'):'';toast(`📅 Data atualizada! Fluxo re-projetado a partir de ${dFmt}`);}
+    });
+    return;
+  }
+
+  // Update padrão para todos os outros campos
+  saveLeadToDB(l).then(ok=>{if(ok){toast('✓ '+l.nome+' atualizado');leadsFiltrados=[...leads];aplicarFiltro();}});
+}
 function deleteLead(id){if(!confirm('Remover lead?'))return;deleteLeadFromDB(id);leads=leads.filter(l=>l.id!==id);leadsFiltrados=[...leads];toast('Removido');aplicarFiltro();}
 
 // ══════════════════════════════════════════
@@ -2665,7 +2773,13 @@ async function saveLead(){
   fillLeadSelects();
   closeM('m-lead');
   ['ml-nome','ml-tel','ml-val','ml-obs','ml-data','ml-cac','ml-meses','ml-taxa','ml-d1p'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  toast('Lead adicionado!');aplicarFiltro();
+  if(lead.status==='venda'){
+    if(!lead.conexao)lead.conexao=getDataBrasiliaISO();
+    const res=await projetarVendaNoFluxoCaixa(lead);
+    if(res&&res.sucesso){const dFmt=res.dataBase?res.dataBase.split('-').reverse().join('/'):'';toast(`✅ Venda registrada! ${res.lancamentos} parcela(s) projetada(s) no fluxo a partir de ${dFmt}`);}
+    else toast('Lead adicionado!');
+  }else{toast('Lead adicionado!');}
+  aplicarFiltro();
 }
 async function saveCliente(){
   const nome=document.getElementById('mca-nome').value.trim();
