@@ -108,6 +108,28 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .alert-msg{font-size:12px;color:var(--tx);line-height:1.4;margin-bottom:6px}
 .alert-item-actions{display:flex;gap:6px}
 
+/* ── PERFIL 360° ── */
+.p360-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+@media(max-width:820px){.p360-grid{grid-template-columns:1fr}}
+.p360-sec{background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.p360-sec-t{font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:10px}
+.p360-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.p360-stat{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px 12px}
+.p360-stat-l{font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.p360-stat-v{font-family:var(--ft);font-size:17px;font-weight:800;color:var(--c)}
+.p360-health{display:flex;align-items:center;gap:8px;margin-top:4px}
+.p360-health-bar{flex:1;height:6px;border-radius:6px;background:var(--s3);overflow:hidden}
+.p360-health-fi{height:100%;border-radius:6px}
+.p360-timeline{max-height:220px;overflow-y:auto}
+.p360-tl-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--s3);font-size:12px}
+.p360-tl-item:last-child{border-bottom:none}
+.p360-tl-dot{width:6px;height:6px;border-radius:50%;background:var(--c);margin-top:5px;flex-shrink:0}
+.p360-badge{font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:20px}
+.p360-badge-saudavel{background:rgba(26,138,90,.12);color:var(--g)}
+.p360-badge-atencao{background:rgba(192,122,0,.12);color:var(--y)}
+.p360-badge-risco{background:rgba(192,57,43,.12);color:var(--r)}
+.p360-badge-sem_dados{background:rgba(122,155,184,.12);color:var(--t3)}
+
 /* ── CONTENT ── */
 .content{padding:20px 24px 48px;flex:1;overflow-y:auto}
 .view{display:none}.view.on{display:block}
@@ -1138,7 +1160,86 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- Custo Variável -->
+<!-- PERFIL 360° DO CLIENTE -->
+<div class="modal" id="m-p360">
+  <div class="mbox" style="max-width:820px">
+    <div class="mhd">
+      <div>
+        <div class="mtl" id="p360-nome">◈ Perfil 360°</div>
+        <div style="font-family:var(--fm);font-size:10px;color:var(--t2);margin-top:3px" id="p360-sub">—</div>
+      </div>
+      <button class="mcl" onclick="closeM('m-p360')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="p360-grid">
+        <!-- COLUNA ESQUERDA: relacionamento + financeiro + saúde -->
+        <div>
+          <div class="p360-sec">
+            <div class="p360-sec-t">Relacionamento comercial</div>
+            <div class="p360-stats">
+              <div class="p360-stat"><div class="p360-stat-l">Contratou</div><div class="p360-stat-v" id="p360-produto" style="font-size:13px">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Cliente desde</div><div class="p360-stat-v" id="p360-inicio" style="font-size:13px">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Responsável DP</div><div class="p360-stat-v" id="p360-resp" style="font-size:13px">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Aniversário</div><div class="p360-stat-v" id="p360-aniv" style="font-size:13px">—</div></div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="p360-stat-l">Última conversa registrada</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
+                <span style="font-size:13px;color:var(--tx)" id="p360-ultima-interacao">—</span>
+                <span class="p360-badge" id="p360-health-badge">—</span>
+              </div>
+              <div class="p360-health"><div class="p360-health-bar"><div class="p360-health-fi" id="p360-health-bar"></div></div><span style="font-family:var(--fm);font-size:10px;color:var(--t3)" id="p360-health-score">—</span></div>
+            </div>
+          </div>
+
+          <div class="p360-sec">
+            <div class="p360-sec-t">Financeiro do cliente</div>
+            <div class="p360-stats">
+              <div class="p360-stat"><div class="p360-stat-l">Receita total</div><div class="p360-stat-v" id="p360-receita" style="color:var(--g)">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Custo total</div><div class="p360-stat-v" id="p360-custo" style="color:var(--r)">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Lucro gerado</div><div class="p360-stat-v" id="p360-lucro">—</div></div>
+              <div class="p360-stat"><div class="p360-stat-l">Indicações feitas</div><div class="p360-stat-v" id="p360-indicacoes">—</div></div>
+            </div>
+          </div>
+
+          <div class="p360-sec">
+            <div class="p360-sec-t">Timeline · últimas interações</div>
+            <div class="p360-timeline" id="p360-timeline"><div class="empty" style="padding:14px"><div class="empty-tx">Carregando...</div></div></div>
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <input class="fi" id="p360-nova-nota" placeholder="Registrar nova interação (ligação, WhatsApp, reunião...)" style="flex:1">
+              <button class="btn btn-p btn-sm" onclick="p360RegistrarInteracao()">+ Registrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: perfil pessoal (editável) -->
+        <div>
+          <div class="p360-sec">
+            <div class="p360-sec-t">Perfil pessoal · quem é essa pessoa</div>
+            <div class="fg2">
+              <div class="fg"><label class="fl">Profissão</label><input class="fi" id="p360-profissao" placeholder="Ex: Médico"></div>
+              <div class="fg"><label class="fl">Especialidade</label><input class="fi" id="p360-especialidade" placeholder="Ex: Dermatologia"></div>
+              <div class="fg"><label class="fl">Estado civil</label><select class="fs" id="p360-estado-civil"><option value="">—</option><option>Solteiro(a)</option><option>Casado(a)</option><option>União estável</option><option>Divorciado(a)</option><option>Viúvo(a)</option></select></div>
+              <div class="fg"><label class="fl">Cidade</label><input class="fi" id="p360-cidade" placeholder="Ex: São Paulo/SP"></div>
+              <div class="fg"><label class="fl">Tem filhos?</label><select class="fs" id="p360-tem-filhos" onchange="document.getElementById('p360-filhos-wrap').style.display=this.value==='true'?'block':'none'"><option value="">—</option><option value="true">Sim</option><option value="false">Não</option></select></div>
+              <div class="fg"><label class="fl">Quantos</label><input class="fi" id="p360-qtd-filhos" type="number" min="0" placeholder="0"></div>
+              <div class="fg full" id="p360-filhos-wrap" style="display:none"><label class="fl">Filhos (nomes/idades)</label><input class="fi" id="p360-filhos-detalhe" placeholder="Ex: João (8), Maria (5)"></div>
+              <div class="fg full"><label class="fl">Data de nascimento</label><input class="fi" id="p360-data-nasc" type="date"></div>
+              <div class="fg full"><label class="fl">Canal de contato preferido</label><select class="fs" id="p360-canal"><option value="">—</option><option>WhatsApp</option><option>Ligação</option><option>E-mail</option><option>Instagram</option></select></div>
+              <div class="fg full"><label class="fl">Interesses / hobbies</label><input class="fi" id="p360-interesses" placeholder="Ex: golf, corrida, vinhos..."></div>
+              <div class="fg full"><label class="fl">Observações pessoais</label><textarea class="fta" id="p360-obs-pessoais" rows="3" placeholder="Contexto de vida, momento, sensibilidades..."></textarea></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-g" onclick="closeM('m-p360')">Fechar</button>
+      <button class="btn btn-p" onclick="p360Salvar()">💾 Salvar Perfil</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="m-cv">
   <div class="mbox" style="max-width:480px">
     <div class="mhd"><div class="mtl">+ Custo Variável</div><button class="mcl" onclick="closeM('m-cv')">✕</button></div>
@@ -2656,6 +2757,7 @@ function renderClientes(){
         <div><div class="cl-nm">${c.nome}</div><div style="font-size:11px;color:var(--t2);font-family:var(--fm);margin-top:2px">${c.resp} · ${c.produto} · desde ${fmtDate(c.inicio)||'—'}</div></div>
         <div style="display:flex;align-items:center;gap:10px">
           <div class="cl-prg"><div class="cl-prg-tx">${done}/24</div><div class="cl-prg-br"><div class="cl-prg-fi" style="width:${pct}%"></div></div><div style="font-family:var(--fm);font-size:11px;color:var(--c)">${pct}%</div></div>
+          <button onclick="event.stopPropagation();abrirPerfil360('${c.id}')" title="Perfil 360°" class="btn btn-p btn-xs">👁 360°</button>
           <button onclick="event.stopPropagation();editarCliente('${c.id}')" title="Editar cliente" style="background:none;border:1px solid var(--b2);color:var(--t2);cursor:pointer;border-radius:6px;padding:3px 8px;font-size:11px;font-family:var(--fm);transition:all .2s" onmouseover="this.style.borderColor='var(--c)';this.style.color='var(--c)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">✏</button>
           <button onclick="event.stopPropagation();removeCliente('${c.id}')" title="Remover cliente" style="background:none;border:1px solid rgba(240,72,85,.3);color:var(--r);cursor:pointer;border-radius:6px;padding:3px 8px;font-size:11px;font-family:var(--fm);transition:all .2s" onmouseover="this.style.background='rgba(240,72,85,.12)'" onmouseout="this.style.background='none'">✕</button>
         </div>
@@ -3428,6 +3530,113 @@ async function marcarAlerta(id,status){
   alertasAbertos=alertasAbertos.filter(a=>a.id!==id);
   renderAlertas();
   toast(status==='resolvido'?'✓ Alerta resolvido':'✓ Marcado como lido');
+}
+
+/* ── PERFIL 360° DO CLIENTE ── */
+let p360Data=null;
+const P360_HS_LBL={saudavel:'✓ Saudável',atencao:'⚠ Atenção',risco:'⚠ Risco de churn',sem_dados:'Sem dados'};
+
+async function abrirPerfil360(clienteId){
+  openM('m-p360');
+  document.getElementById('p360-nome').textContent='◈ Carregando...';
+  document.getElementById('p360-timeline').innerHTML='<div class="empty" style="padding:14px"><div class="empty-tx">Carregando...</div></div>';
+  const{data,error}=await sb.from('vw_cliente_360').select('*').eq('cliente_id',clienteId).single();
+  if(error){toast('Erro ao carregar perfil: '+error.message,'err');closeM('m-p360');return;}
+  p360Data=data;
+
+  document.getElementById('p360-nome').textContent='◈ '+data.nome;
+  document.getElementById('p360-sub').textContent=(data.lead_pk?`Lead #${data.lead_pk} · `:'')+(data.origem||'origem não informada');
+  document.getElementById('p360-produto').textContent=data.produto||'—';
+  document.getElementById('p360-inicio').textContent=fmtDate(data.inicio)||'—';
+  document.getElementById('p360-resp').textContent=data.resp||'—';
+  document.getElementById('p360-aniv').textContent=data.data_nascimento?fmtDate(data.data_nascimento):'não informado';
+  document.getElementById('p360-ultima-interacao').textContent=data.ultima_interacao?new Date(data.ultima_interacao).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+(data.dias_sem_interacao!=null?` (há ${data.dias_sem_interacao}d)`:''):'sem registro ainda';
+
+  const hs=data.health_status||'sem_dados';
+  const badge=document.getElementById('p360-health-badge');
+  badge.textContent=P360_HS_LBL[hs]||hs;
+  badge.className='p360-badge p360-badge-'+hs;
+  const score=data.health_score??0;
+  const bar=document.getElementById('p360-health-bar');
+  bar.style.width=score+'%';
+  bar.style.background=score>=70?'var(--g)':score>=40?'var(--y)':'var(--r)';
+  document.getElementById('p360-health-score').textContent='score '+score;
+
+  document.getElementById('p360-receita').textContent=R2(data.receita_total||0);
+  document.getElementById('p360-custo').textContent=R2(data.custo_total||0);
+  const lucroEl=document.getElementById('p360-lucro');
+  lucroEl.textContent=R2(data.lucro||0);
+  lucroEl.style.color=(data.lucro||0)>=0?'var(--g)':'var(--r)';
+  document.getElementById('p360-indicacoes').textContent=data.qtd_indicacoes+(data.receita_gerada_por_indicacoes?` · gerou ${R2(data.receita_gerada_por_indicacoes)}`:'');
+
+  document.getElementById('p360-profissao').value=data.profissao||'';
+  document.getElementById('p360-especialidade').value=data.especialidade||'';
+  document.getElementById('p360-estado-civil').value=data.estado_civil||'';
+  document.getElementById('p360-cidade').value=data.cidade||'';
+  document.getElementById('p360-tem-filhos').value=data.tem_filhos===true?'true':data.tem_filhos===false?'false':'';
+  document.getElementById('p360-filhos-wrap').style.display=data.tem_filhos?'block':'none';
+  document.getElementById('p360-qtd-filhos').value=data.qtd_filhos??'';
+  document.getElementById('p360-filhos-detalhe').value=data.filhos_detalhe||'';
+  document.getElementById('p360-data-nasc').value=data.data_nascimento||'';
+  document.getElementById('p360-canal').value=data.canal_preferido||'';
+  document.getElementById('p360-interesses').value=data.interesses||'';
+  document.getElementById('p360-obs-pessoais').value=data.observacoes_pessoais||'';
+  document.getElementById('p360-nova-nota').value='';
+
+  p360CarregarTimeline(data.lead_pk);
+}
+
+async function p360CarregarTimeline(leadPk){
+  const el=document.getElementById('p360-timeline');
+  if(!leadPk){el.innerHTML='<div class="empty" style="padding:14px"><div class="empty-tx">Cliente sem lead vinculado — sem histórico de atividades</div></div>';return;}
+  const{data,error}=await sb.from('lead_atividades').select('*').eq('lead_id',leadPk).order('criado_em',{ascending:false}).limit(15);
+  if(error){el.innerHTML='<div class="empty" style="padding:14px"><div class="empty-tx">Erro ao carregar timeline</div></div>';return;}
+  if(!data||!data.length){el.innerHTML='<div class="empty" style="padding:14px"><div class="empty-tx">Nenhuma interação registrada ainda</div></div>';return;}
+  el.innerHTML=data.map(a=>`<div class="p360-tl-item"><span class="p360-tl-dot"></span><div><div style="color:var(--tx)">${a.descricao||a.tipo||'—'}</div><div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:1px">${a.usuario||'—'} · ${new Date(a.criado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join('');
+}
+
+async function p360RegistrarInteracao(){
+  if(!p360Data)return;
+  if(!p360Data.lead_pk){toast('Este cliente não tem lead vinculado — não dá pra registrar timeline','wrn');return;}
+  const txt=document.getElementById('p360-nova-nota').value.trim();
+  if(!txt){toast('Digite a interação primeiro','wrn');return;}
+  const{error}=await sb.from('lead_atividades').insert({empresa_id:EMPRESA_ID,lead_id:p360Data.lead_pk,tipo:'nota',descricao:txt,usuario:document.getElementById('u-name')?.textContent||'DP'});
+  if(error){toast('Erro: '+error.message,'err');return;}
+  document.getElementById('p360-nova-nota').value='';
+  toast('✓ Interação registrada');
+  await p360CarregarTimeline(p360Data.lead_pk);
+  loadAlertas(); // pode ter resolvido um alerta de churn implicitamente amanhã
+}
+
+async function p360Salvar(){
+  if(!p360Data)return;
+  const temFilhosRaw=document.getElementById('p360-tem-filhos').value;
+  const perfil={
+    cliente_id:p360Data.cliente_id,
+    empresa_id:EMPRESA_ID,
+    profissao:document.getElementById('p360-profissao').value.trim()||null,
+    especialidade:document.getElementById('p360-especialidade').value.trim()||null,
+    estado_civil:document.getElementById('p360-estado-civil').value||null,
+    cidade:document.getElementById('p360-cidade').value.trim()||null,
+    tem_filhos:temFilhosRaw===''?null:temFilhosRaw==='true',
+    qtd_filhos:document.getElementById('p360-qtd-filhos').value?parseInt(document.getElementById('p360-qtd-filhos').value):null,
+    filhos_detalhe:document.getElementById('p360-filhos-detalhe').value.trim()||null,
+    canal_preferido:document.getElementById('p360-canal').value||null,
+    interesses:document.getElementById('p360-interesses').value.trim()||null,
+    observacoes_pessoais:document.getElementById('p360-obs-pessoais').value.trim()||null,
+    atualizado_em:new Date().toISOString()
+  };
+  const{error:errPerfil}=await sb.from('clientes_perfil').upsert(perfil,{onConflict:'cliente_id'});
+  if(errPerfil){toast('Erro ao salvar perfil: '+errPerfil.message,'err');return;}
+
+  // aniversário fica gravado no lead (usado pelo motor de alertas)
+  const dataNasc=document.getElementById('p360-data-nasc').value||null;
+  if(p360Data.lead_pk){
+    const{error:errLead}=await sb.from('leads').update({data_nascimento:dataNasc}).eq('id',p360Data.lead_pk);
+    if(errLead){toast('Perfil salvo, mas erro ao salvar aniversário: '+errLead.message,'wrn');closeM('m-p360');return;}
+  }
+  toast('✓ Perfil 360° salvo');
+  closeM('m-p360');
 }
 
 // ══════════════════════════════════════════
