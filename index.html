@@ -88,6 +88,26 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .btn-sm{padding:4px 10px;font-size:10px}
 .btn-xs{padding:3px 8px;font-size:10px;border-radius:6px}
 
+/* ── ALERTAS ── */
+.alert-bell-wrap{position:relative}
+.alert-bell-btn{position:relative;font-size:14px;line-height:1}
+.alert-badge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:20px;background:var(--r);color:#fff;font-family:var(--fm);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.alert-panel{display:none;position:absolute;top:calc(100% + 8px);right:0;width:340px;max-height:420px;background:var(--s1);border:1px solid var(--b1);border-radius:12px;box-shadow:0 16px 40px rgba(13,42,69,.18);z-index:150;overflow:hidden;flex-direction:column}
+.alert-panel.on{display:flex}
+.alert-panel-hd{padding:12px 16px;border-bottom:1px solid var(--b1);font-family:var(--ft);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.alert-panel-list{overflow-y:auto;flex:1}
+.alert-empty{padding:24px 16px;text-align:center;font-size:12px;color:var(--t3)}
+.alert-item{padding:10px 16px;border-bottom:1px solid var(--s3)}
+.alert-item:last-child{border-bottom:none}
+.alert-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.alert-tag{font-family:var(--fm);font-size:9px;letter-spacing:.5px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.alert-tag-aniversario{background:rgba(160,122,32,.12);color:var(--gold)}
+.alert-tag-pagamento{background:rgba(192,122,0,.12);color:var(--y)}
+.alert-tag-churn{background:rgba(192,57,43,.12);color:var(--r)}
+.alert-date{font-family:var(--fm);font-size:10px;color:var(--t3)}
+.alert-msg{font-size:12px;color:var(--tx);line-height:1.4;margin-bottom:6px}
+.alert-item-actions{display:flex;gap:6px}
+
 /* ── CONTENT ── */
 .content{padding:20px 24px 48px;flex:1;overflow-y:auto}
 .view{display:none}.view.on{display:block}
@@ -431,6 +451,13 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="tbr">
       <div class="live"><span class="ldot"></span>LIVE</div>
+      <div class="alert-bell-wrap">
+        <button class="btn btn-g btn-sm alert-bell-btn" id="alert-bell-btn" onclick="toggleAlertasPanel(event)" title="Alertas">🔔<span class="alert-badge" id="alert-badge" style="display:none">0</span></button>
+        <div class="alert-panel" id="alert-panel">
+          <div class="alert-panel-hd"><span>Alertas</span><span id="alert-panel-count" style="color:var(--t3);font-weight:500"></span></div>
+          <div class="alert-panel-list" id="alert-panel-list"></div>
+        </div>
+      </div>
       <select id="filter-periodo" class="psel" onchange="aplicarFiltro()">
         <option value="todos">Todos os períodos</option>
         <option value="hoje">Hoje</option>
@@ -1269,9 +1296,10 @@ async function initApp(user){
   setTimeout(async()=>{
     await loadClientesFromDB();
     await loadLeadsFromDB();
-    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs(),loadCustosFixos()]);
+    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs(),loadCustosFixos(),loadAlertas()]);
     fillLeadSelects();
     setDefaultOvDates();
+    setInterval(loadAlertas,5*60*1000); // refresh alertas a cada 5min
   },0);
 }
 // Converte dd/mm/yyyy ou yyyy-mm-dd → yyyy-mm-dd (formato aceito pelo Postgres date)
@@ -3347,6 +3375,61 @@ document.querySelectorAll('.modal').forEach(m=>{m.addEventListener('click',e=>{i
 // ── TOAST ──
 function toast(msg,tp=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(tp?' '+tp:'');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800);}
 
+/* ── ALERTAS (aniversário / pagamento / churn) ── */
+let alertasAbertos=[];
+const ALERTA_IC={aniversario:'🎂',pagamento:'💰',churn:'⚠️'};
+const ALERTA_LBL={aniversario:'Aniversário',pagamento:'Pagamento',churn:'Risco de churn'};
+
+async function loadAlertas(){
+  const{data,error}=await sb.from('alertas').select('*').eq('empresa_id',EMPRESA_ID).eq('status','aberto').order('criado_em',{ascending:false});
+  if(error){console.error('loadAlertas erro:',error);return;}
+  alertasAbertos=data||[];
+  renderAlertas();
+}
+
+function renderAlertas(){
+  const badge=document.getElementById('alert-badge');
+  const countLbl=document.getElementById('alert-panel-count');
+  const n=alertasAbertos.length;
+  if(badge){badge.textContent=n>99?'99+':n;badge.style.display=n>0?'flex':'none';}
+  if(countLbl)countLbl.textContent=n?`${n} aberto${n>1?'s':''}`:'';
+  const list=document.getElementById('alert-panel-list');
+  if(!list)return;
+  if(!n){list.innerHTML='<div class="alert-empty">Nenhum alerta aberto 🎉</div>';return;}
+  list.innerHTML=alertasAbertos.map(a=>`
+    <div class="alert-item">
+      <div class="alert-item-top">
+        <span class="alert-tag alert-tag-${a.tipo}">${ALERTA_IC[a.tipo]||'•'} ${ALERTA_LBL[a.tipo]||a.tipo}</span>
+        <span class="alert-date">${fmtDate(a.data_referencia)}</span>
+      </div>
+      <div class="alert-msg">${a.titulo?`<b>${a.titulo}</b><br>`:''}${a.mensagem}</div>
+      <div class="alert-item-actions">
+        <button class="btn btn-xs btn-g" onclick="marcarAlerta('${a.id}','lido')">Marcar lido</button>
+        <button class="btn btn-xs btn-grn" onclick="marcarAlerta('${a.id}','resolvido')">Resolver</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleAlertasPanel(ev){
+  if(ev)ev.stopPropagation();
+  document.getElementById('alert-panel').classList.toggle('on');
+}
+document.addEventListener('click',(e)=>{
+  const wrap=document.querySelector('.alert-bell-wrap');
+  const panel=document.getElementById('alert-panel');
+  if(panel&&panel.classList.contains('on')&&wrap&&!wrap.contains(e.target))panel.classList.remove('on');
+});
+
+async function marcarAlerta(id,status){
+  const upd={status};
+  if(status==='resolvido')upd.resolvido_em=new Date().toISOString();
+  const{error}=await sb.from('alertas').update(upd).eq('id',id);
+  if(error){toast('Erro: '+error.message,'err');return;}
+  alertasAbertos=alertasAbertos.filter(a=>a.id!==id);
+  renderAlertas();
+  toast(status==='resolvido'?'✓ Alerta resolvido':'✓ Marcado como lido');
+}
+
 // ══════════════════════════════════════════
 // CHECKOUT INTEGRADO NO MODAL DE LEAD
 // ══════════════════════════════════════════
@@ -4229,30 +4312,6 @@ async function mcPublicar(status){
   <div class="mbody" id="rel-diag-body" style="padding:20px 24px"></div>
   <div class="mft"><button class="btn btn-g" onclick="closeM('m-rel-diag')">Fechar</button></div>
 </div>
-</div>
-
-</body>
-</html>
-  <div class="mbox" style="max-width:460px">
-    <div class="mhd"><div class="mtl">◈ Editar Etapa</div><button class="mcl" onclick="closeM('m-mc-etapa')">✕</button></div>
-    <div class="mbody">
-      <input type="hidden" id="mce-id">
-      <div class="fg"><label class="fl">Nome da etapa</label><input class="fi" id="mce-nome" placeholder="ex: Apresentação"></div>
-      <div class="fg"><label class="fl">Volume de entrada (leads)</label><input class="fi" id="mce-vol" type="number" min="0" placeholder="0"></div>
-      <div class="fg">
-        <label class="fl">Taxa de conversão atual: <span id="mce-taxa-lbl" style="color:var(--c)">0%</span></label>
-        <input type="range" id="mce-taxa" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--c)" oninput="document.getElementById('mce-taxa-lbl').textContent=this.value+'%'">
-      </div>
-      <div class="fg">
-        <label class="fl">Taxa de conversão potencial: <span id="mce-pot-lbl" style="color:var(--g)">0%</span></label>
-        <input type="range" id="mce-pot" min="0" max="100" step="1" value="0" style="width:100%;accent-color:var(--g)" oninput="document.getElementById('mce-pot-lbl').textContent=this.value+'%'">
-      </div>
-    </div>
-    <div class="mft">
-      <button class="btn btn-g" onclick="closeM('m-mc-etapa')">Cancelar</button>
-      <button class="btn btn-p" onclick="mcSalvarEtapa()">Salvar</button>
-    </div>
-  </div>
 </div>
 
 </body>
