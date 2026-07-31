@@ -2750,7 +2750,7 @@ function buildReuniaoCard(c,r){
     </div>
     ${btnDiag?`<div style="margin:8px 0 4px">${btnDiag}</div>`:''}
     ${totalChecks>0?`<div style="margin:6px 0 2px"><div class="prog"><div class="prog-f" style="width:${progPct}%;background:${progPct===100?'var(--g)':'var(--c)'}"></div></div><div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:2px">${checksFeitos}/${totalChecks}</div></div>`:''}
-    <select onchange="updateReuniao(${c.id},${r.n},'status',this.value)">
+    <select onchange="updateReuniao('${c.id}',${r.n},'status',this.value)">
       <option value="pendente"${rd.status==='pendente'?' selected':''}>⏳ Pendente</option>
       <option value="agendado"${rd.status==='agendado'?' selected':''}>📅 Agendada</option>
       <option value="entregue"${rd.status==='entregue'?' selected':''}>✅ Entregue</option>
