@@ -692,8 +692,9 @@ tr:last-child td{border-bottom:none}
           <div class="card-h">
             <div class="card-t">📈 Receita Diária</div>
             <div style="display:flex;gap:6px">
-              <input type="date" id="ov-de" class="psel" style="font-size:10px;padding:5px 8px" onchange="renderChartReceita()"/>
-              <input type="date" id="ov-ate" class="psel" style="font-size:10px;padding:5px 8px" onchange="renderChartReceita()"/>
+              <input type="date" id="ov-de" class="psel" style="font-size:10px;padding:5px 8px" onchange="renderChartReceita();renderProjecaoCard();"/>
+              <input type="date" id="ov-ate" class="psel" style="font-size:10px;padding:5px 8px" onchange="renderChartReceita();renderProjecaoCard();"/>
+              <button class="btn btn-g btn-xs" title="Limpar range personalizado (volta a usar o filtro geral)" onclick="document.getElementById('ov-de').value='';document.getElementById('ov-ate').value='';renderChartReceita();renderProjecaoCard();">✕</button>
             </div>
           </div>
           <div class="chart-wrap" style="height:190px"><canvas id="c-ov-receita"></canvas></div>
@@ -1683,6 +1684,36 @@ function renderChartReceita(){
   CHARTS['c-ov-receita']=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Receita R$',data:vals,backgroundColor:'rgba(26,107,181,.2)',borderColor:'rgba(26,107,181,.7)',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>' '+R(d.raw)}}},scales:{x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#2E5F8A',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(0,0,0,.07)'},ticks:{color:'#2E5F8A',font:{size:10},callback:v=>v>=1000?'R$'+Math.round(v/1000)+'k':R(v)}}}}}); 
 }
 
+// Determina qual período está "em uso" pra basear a projeção:
+// 1) se a Receita Diária tem um range personalizado (ov-de/ov-ate) preenchido, ele manda
+// 2) senão, usa o filtro geral do topbar (ao lado do sino)
+function getBaseProjecao(){
+  const deOv=document.getElementById('ov-de')?.value;
+  const ateOv=document.getElementById('ov-ate')?.value;
+  if(deOv&&ateOv){
+    const deD=new Date(deOv+'T00:00:00'),ateD=new Date(ateOv+'T23:59:59');
+    const ls=leads.filter(l=>{if(!l.conexao)return false;const d=new Date(l.conexao+'T12:00:00');return d>=deD&&d<=ateD;});
+    return{ls,label:`${fmtDate(deOv)} a ${fmtDate(ateOv)} · Receita Diária`};
+  }
+  const fp=document.getElementById('filter-periodo')?.value||'todos';
+  const labels={todos:'Todos os períodos',hoje:'Hoje',semana:'Esta semana',mes:'Este mês',mes_passado:'Mês passado',personalizado:'Período personalizado'};
+  return{ls:getLeadsAtivos(),label:labels[fp]||'Este mês'};
+}
+
+function renderProjecaoCard(){
+  const el=document.getElementById('ovProj');
+  if(!el)return;
+  const{ls,label}=getBaseProjecao();
+  const vendasP=ls.filter(l=>l.status==='venda');
+  const receitaP=vendasP.reduce((s,l)=>s+Number(l.receita),0);
+  const ticketP=vendasP.length>0?(receitaP/vendasP.length):0;
+  const em=ls.filter(l=>l.status==='ativo');
+  const pb=receitaP+em.filter(l=>l.temp==='quente').length*ticketP*.6;
+  const pm=receitaP+em.length*ticketP*.3;
+  const pa=receitaP+em.length*ticketP*.6;
+  el.innerHTML=`<div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-bottom:8px">Base: ${label}</div><div style="display:flex;flex-direction:column;gap:10px">${[['Conservador',pb,'var(--r)'],['Realista',pm,'var(--c)'],['Otimista',pa,'var(--g)']].map(([lb,v,c])=>`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 14px"><span style="font-family:var(--fm);font-size:10px;color:var(--t2)">${lb.toUpperCase()}</span><span style="font-family:var(--ft);font-size:16px;font-weight:800;color:${c}">${R(v)}</span></div>`).join('')}</div>`;
+}
+
 function renderOverview(){
   const s=compute();
   document.getElementById('ovKpis').innerHTML=[
@@ -1705,11 +1736,7 @@ function renderOverview(){
   document.getElementById('ovOrigem').innerHTML=sortO.slice(0,6).map(([k,v],i)=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:${i===0?'var(--c)':'var(--t2)'};font-weight:${i===0?700:400}">${k}${i===0?' 🏆':''}</span><span style="font-family:var(--fm);font-size:11px;color:var(--tx)">${v}</span></div><div style="height:3px;background:var(--s2);border-radius:2px;overflow:hidden"><div style="height:100%;background:${i===0?'var(--c)':'var(--b3)'};width:${(v/mxO)*100}%;border-radius:2px"></div></div></div>`).join('');
   
   // Projeção
-  const em=leads.filter(l=>l.status==='ativo');
-  const pb=s.receita+em.filter(l=>l.temp==='quente').length*s.ticket*.6;
-  const pm=s.receita+em.length*s.ticket*.3;
-  const pa=s.receita+em.length*s.ticket*.6;
-  document.getElementById('ovProj').innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">${[['Conservador',pb,'var(--r)'],['Realista',pm,'var(--c)'],['Otimista',pa,'var(--g)']].map(([lb,v,c])=>`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 14px"><span style="font-family:var(--fm);font-size:10px;color:var(--t2)">${lb.toUpperCase()}</span><span style="font-family:var(--ft);font-size:16px;font-weight:800;color:${c}">${R(v)}</span></div>`).join('')}</div>`;
+  renderProjecaoCard();
   
   // Recentes
   const rec=[...leads].slice(-8).reverse();
