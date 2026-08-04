@@ -523,6 +523,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="tbr">
       <div class="live"><span class="ldot"></span>LIVE</div>
+      <button class="btn btn-g btn-sm" onclick="window.open('gestao-visivel.html','_blank','noopener')" title="Abrir a TV de Gestão Visível em uma nova aba (para espelhar no telão)" style="font-weight:700">📺 Gestão Visível</button>
       <button class="btn btn-g btn-sm brf-trigger-btn" onclick="abrirBriefing(true)" title="Reabrir briefing operacional">⚡</button>
       <div class="alert-bell-wrap">
         <button class="btn btn-g btn-sm alert-bell-btn" id="alert-bell-btn" onclick="toggleAlertasPanel(event)" title="Alertas">🔔<span class="alert-badge" id="alert-badge" style="display:none">0</span></button>
@@ -1076,7 +1077,7 @@ tr:last-child td{border-bottom:none}
         <div class="fg"><label class="fl">Origem</label><select class="fs" id="ml-origem"><option>Ligação</option><option>Indicação</option><option>Evento</option><option>MLS</option><option>Instagram</option><option>Diagnóstico</option><option>Outros</option></select></div>
         <div class="fg"><label class="fl">Closer</label><input class="fi" id="ml-vend" placeholder="Nome do closer"/></div>
         <div class="fg"><label class="fl">BDR/SDR</label><input class="fi" id="ml-prosp" placeholder="Nome do prospectador"/></div>
-        <div class="fg"><label class="fl">Produto</label><select class="fs" id="ml-prod"><option>Escudo 21</option><option>Aceleração 6 meses</option></select></div>
+        <div class="fg"><label class="fl">Produto</label><select class="fs" id="ml-prod"></select></div>
         <div class="fg"><label class="fl">Etapa</label><select class="fs" id="ml-etapa"><option value="1">Conexão</option><option value="2">Apresentação</option><option value="3">Speech</option><option value="4">Fechamento</option><option value="5">Referido</option></select></div>
         <div class="fg"><label class="fl">Temperatura</label><select class="fs" id="ml-temp"><option value="quente">🔥 Quente</option><option value="morno">🌡 Morno</option><option value="frio">❄ Frio</option></select></div>
         <div class="fg"><label class="fl">Status</label><select class="fs" id="ml-status"><option value="ativo">● Ativo</option><option value="venda">✓ Venda</option><option value="perdido">✗ Perdido</option></select></div>
@@ -1203,7 +1204,7 @@ tr:last-child td{border-bottom:none}
       <div class="fg2">
         <div class="fg full"><label class="fl">Nome do Cliente</label><input class="fi" id="mca-nome" placeholder="Ex: Clínica Exemplo"/></div>
         <div class="fg"><label class="fl">Responsável DP</label><select class="fs" id="mca-resp"><option>Victor</option><option>Pedro</option><option>Ambos</option></select></div>
-        <div class="fg"><label class="fl">Produto</label><select class="fs" id="mca-prod"><option>Escudo 21</option><option>Aceleração 6 meses</option></select></div>
+        <div class="fg"><label class="fl">Produto</label><select class="fs" id="mca-prod"></select></div>
         <div class="fg"><label class="fl">Data de Início</label><input class="fi" id="mca-inicio" type="date"/></div>
         <div class="fg full"><label class="fl">Observação Inicial</label><textarea class="fta" id="mca-obs" rows="2" placeholder="Contexto inicial do cliente..."></textarea></div>
       </div>
@@ -1475,6 +1476,22 @@ const {createClient}=supabase;
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoeGxzZXN6ZWRjbm1xcXJ5dXN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTcyMDcsImV4cCI6MjA5MDYzMzIwN30.WPAltPpCyLtgp8BulahVXU8z9rzlfezhZChc-0lu-6M';
 const EMPRESA_ID='11111111-1111-1111-1111-111111111111';
 const sb=createClient('https://chxlseszedcnmqqryusz.supabase.co',SUPABASE_KEY);
+// ===== Catálogo de produtos (tabela produtos, por empresa) =====
+let PRODUTOS=[];
+async function loadProdutos(){
+  const{data,error}=await sb.from('produtos').select('nome,cor,ordem').eq('empresa_id',EMPRESA_ID).eq('ativo',true).order('ordem',{ascending:true});
+  PRODUTOS=(error||!data||!data.length)?[{nome:'SalesMed'},{nome:'Sales Pressure'},{nome:'Mentoring Pressure AI'}]:data;
+}
+// Preenche um <select> de produto preservando o valor atual quando existir
+function fillProdutoSelect(id,valorAtual){
+  const el=document.getElementById(id);if(!el)return;
+  const atual=valorAtual!=null?valorAtual:el.value;
+  el.innerHTML=PRODUTOS.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  if(atual&&PRODUTOS.some(p=>p.nome===atual))el.value=atual;
+}
+function fillProdutoSelects(){fillProdutoSelect('ml-prod');fillProdutoSelect('mca-prod');}
+// Produto padrão (primeiro ativo) usado em criações automáticas
+function produtoPadrao(){return PRODUTOS.length?PRODUTOS[0].nome:'Sales Pressure';}
 
 async function doLogin(){
   try{
@@ -1500,8 +1517,9 @@ async function initApp(user){
   setTimeout(async()=>{
     await loadClientesFromDB();
     await loadLeadsFromDB();
-    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs(),loadCustosFixos(),loadAlertas(),loadClientes360Map()]);
+    await Promise.all([loadCV(),loadEntradas(),loadPlanosFinanceiro(),loadColabs(),loadCustosFixos(),loadAlertas(),loadClientes360Map(),loadProdutos()]);
     fillLeadSelects();
+    fillProdutoSelects();
     setDefaultOvDates();
     setInterval(loadAlertas,5*60*1000); // refresh alertas a cada 5min
     abrirBriefing();
@@ -2327,7 +2345,7 @@ function gerarPlanoIA(id){
 async function converterDiagParaCliente(id){
   const d=diagClientes.find(x=>x.id===id);if(!d)return;
   if(!confirm(`Criar "${d.nome_responsavel}" como Cliente Ativo?`))return;
-  const novo={id:null,nome:d.nome_responsavel,resp:'Victor',produto:'Escudo 21',inicio:new Date().toISOString().slice(0,10),obs:`Diag · Fat: ${d.faturamento_atual||'—'} · ${d.segmento||'—'} · Score: ${d.score||0} · Gargalo: ${d.maior_obstaculo||'—'}`,reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))};
+  const novo={id:null,nome:d.nome_responsavel,resp:'Victor',produto:produtoPadrao(),inicio:new Date().toISOString().slice(0,10),obs:`Diag · Fat: ${d.faturamento_atual||'—'} · ${d.segmento||'—'} · Score: ${d.score||0} · Gargalo: ${d.maior_obstaculo||'—'}`,reunioes:REUNIOES_PADRAO.flatMap(f=>f.items).map(r=>({...r,status:'pendente',entregavel:'',data:''}))};
   await saveClienteToDB(novo);clientesAtivos.push(novo);
   await updDiagStatus(id,'em_atendimento');
   toast(`✓ ${d.nome_responsavel} adicionado como cliente ativo!`);renderClientes();
@@ -2336,11 +2354,11 @@ async function converterDiagParaCliente(id){
 
 async function converterParaKanban(diagId,nome,whatsapp,faturamento,segmento,objetivo,nivel){
   if(!confirm(`Converter "${nome}" para o Kanban?`))return;
-  const novoLead={empresa_id:EMPRESA_ID,nome,telefone:whatsapp||null,origem:'Diagnóstico',vendedor:'',produto:'Escudo 21',etapa:'Conexão',status:'ativo',temperatura:nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',receita:0,conexao:new Date().toISOString().slice(0,10),observacoes:`Diagnóstico · Fat: ${faturamento} · ${segmento} · ${objetivo}`,atualizado_em:new Date().toISOString()};
+  const novoLead={empresa_id:EMPRESA_ID,nome,telefone:whatsapp||null,origem:'Diagnóstico',vendedor:'',produto:produtoPadrao(),etapa:'Conexão',status:'ativo',temperatura:nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',receita:0,conexao:new Date().toISOString().slice(0,10),observacoes:`Diagnóstico · Fat: ${faturamento} · ${segmento} · ${objetivo}`,atualizado_em:new Date().toISOString()};
   const{data:lc,error}=await sb.from('leads').insert(novoLead).select().single();
   if(error){toast('Erro: '+error.message,'err');return;}
   await sb.from('leads_diagnostico').update({status:'convertido',convertido_lead_id:lc.id}).eq('id',diagId);
-  leads.push({id:lc.id,nome,tel:whatsapp||'',origem:'Diagnóstico',vendedor:'',prospectador:'',produto:'Escudo 21',ordem:1,status:'ativo',temp:nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',receita:0,conexao:new Date().toISOString().slice(0,10),obs:`Fat: ${faturamento} · ${segmento} · ${objetivo}`});
+  leads.push({id:lc.id,nome,tel:whatsapp||'',origem:'Diagnóstico',vendedor:'',prospectador:'',produto:produtoPadrao(),ordem:1,status:'ativo',temp:nivel==='critico'?'quente':nivel==='atencao'?'morno':'frio',receita:0,conexao:new Date().toISOString().slice(0,10),obs:`Fat: ${faturamento} · ${segmento} · ${objetivo}`});
   toast(`✓ ${nome} convertido!`);carregarDiagnosticos();renderAll();
 }
 
@@ -2983,7 +3001,7 @@ function editarCliente(id){
   const c=clientesAtivos.find(x=>String(x.id)===String(id));if(!c)return;
   document.getElementById('mca-nome').value=c.nome||'';
   document.getElementById('mca-resp').value=c.resp||'Victor';
-  document.getElementById('mca-prod').value=c.produto||'Escudo 21';
+  fillProdutoSelect('mca-prod',c.produto||produtoPadrao());
   document.getElementById('mca-inicio').value=c.inicio||'';
   document.getElementById('mca-obs').value=c.obs||'';
   const btn=document.querySelector('#m-cliente .mft .btn-p');
